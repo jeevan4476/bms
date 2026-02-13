@@ -8,11 +8,11 @@
 		<version>4.0.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>backend</artifactId>
+	<groupId>com.bms</groupId>
+	<artifactId>bms</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>backend</name>
-	<description>Demo project for Spring Boot</description>
+	<name>bms</name>
+	<description>BMS - Multi-event Booking Management System</description>
 	<url/>
 	<licenses>
 		<license/>
