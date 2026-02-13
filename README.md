@@ -77,6 +77,11 @@ cd BMS
 mvn clean
 mvn spring-boot:run
 ```
+or 
+```bash
+./mvnw clean
+./mvnw spring-boot:run
+```
 The application will be available at: [http://localhost:8080](http://localhost:8080)
 
 ### H2 Database Console (Dev Only)
@@ -91,12 +96,12 @@ The application will be available at: [http://localhost:8080](http://localhost:8
 
 ### Build Image
 ```bash
-docker build -t BMS .
+docker build -t bms-backend .
 ```
 
 ### Run Container
 ```bash
-docker run -p 8080:8080 BMS
+docker run -p 8080:8080 bms-backend
 ```
 
 ---
