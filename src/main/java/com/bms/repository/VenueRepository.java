@@ -2,7 +2,7 @@ package com.bms.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.bms.entity.User;
+import com.bms.entity.Venue;
 
-public interface VenueRepository extends JpaRepository<User, Long> {
+public interface VenueRepository extends JpaRepository<Venue, Long> {
 }
