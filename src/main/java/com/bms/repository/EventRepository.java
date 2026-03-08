@@ -2,7 +2,7 @@ package com.bms.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.bms.entity.User;
+import com.bms.entity.Event;
 
-public interface EventRepository extends JpaRepository<User, Long> {
+public interface EventRepository extends JpaRepository<Event, Long> {
 }
