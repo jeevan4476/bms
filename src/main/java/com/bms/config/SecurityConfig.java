@@ -33,11 +33,12 @@ public class SecurityConfig {
                 .requestMatchers(PathPatternRequestMatcher.pathPattern("/h2-console")).permitAll()
                 .requestMatchers(PathPatternRequestMatcher.pathPattern("/h2-console/**")).permitAll()
 
-                .requestMatchers("/").permitAll()
+                .requestMatchers("/", "/error", "/favicon.ico").permitAll()
 
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/events/**").permitAll()
                 .requestMatchers("/api/shows/**").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/bookings/**").hasRole("USER")
