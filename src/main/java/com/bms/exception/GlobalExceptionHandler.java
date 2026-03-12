@@ -25,4 +25,18 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         ));
     }
+
+    @ExceptionHandler(SeatAlreadyBookedException.class)
+    public ResponseEntity<ErrorResponse> handleSeatAlreadyBooked(SeatAlreadyBookedException ex,
+                                                                 HttpServletRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        return ResponseEntity.status(status).body(new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        ));
+    }
 }
