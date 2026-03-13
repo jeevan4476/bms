@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bms.dto.BookingRequest;
 import com.bms.dto.BookingResponse;
@@ -14,6 +15,7 @@ import com.bms.entity.Seat;
 import com.bms.entity.Show;
 import com.bms.entity.User;
 import com.bms.entity_enums.BookingStatus;
+import com.bms.exception.SeatAlreadyBookedException;
 import com.bms.repository.BookingRepository;
 import com.bms.repository.BookingSeatRepository;
 import com.bms.repository.SeatRepository;
@@ -44,6 +46,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public BookingResponse createBooking(BookingRequest request) {
 
         User user = userRepository.findById(request.getUserId()).orElseThrow();
@@ -52,6 +55,30 @@ public class BookingServiceImpl implements BookingService {
 
         List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
 
+        // Pessimistic lock: acquire row-level locks on any existing BookingSeat rows
+        // for this show + these seats. This blocks concurrent transactions.
+        List<BookingSeat> lockedRows = bookingSeatRepository
+                .findByShowIdAndSeatIdInForUpdate(show.getId(), request.getSeatIds());
+
+        // If any locked rows exist, those seats are already booked
+        if (!lockedRows.isEmpty()) {
+            List<Long> alreadyBooked = lockedRows.stream()
+                    .map(bs -> bs.getSeat().getId())
+                    .toList();
+            throw new SeatAlreadyBookedException(
+                    "Seats already booked for this show: " + alreadyBooked);
+        }
+
+        // Double-check using a count query (covers edge cases)
+        boolean anyBooked = bookingSeatRepository
+                .existsByShowIdAndSeatIdIn(show.getId(), request.getSeatIds());
+
+        if (anyBooked) {
+            throw new SeatAlreadyBookedException(
+                    "One or more seats are already booked for this show");
+        }
+
+        // All clear — create the booking
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setShow(show);
@@ -61,13 +88,13 @@ public class BookingServiceImpl implements BookingService {
         booking = bookingRepository.save(booking);
 
         double totalAmount = 0;
-
         List<Long> seatIds = new ArrayList<>();
 
         for (Seat seat : seats) {
 
             BookingSeat bookingSeat = new BookingSeat();
             bookingSeat.setBooking(booking);
+            bookingSeat.setShow(show);
             bookingSeat.setSeat(seat);
             bookingSeat.setPrice(show.getPrice());
 
@@ -78,7 +105,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setTotalAmount(totalAmount);
-
         bookingRepository.save(booking);
 
         return new BookingResponse(
@@ -143,12 +169,15 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public void cancelBooking(Long bookingId) {
 
         Booking booking = bookingRepository.findById(bookingId).orElseThrow();
 
         booking.setStatus(BookingStatus.CANCELLED);
-
         bookingRepository.save(booking);
+
+        // Delete BookingSeat rows so those seats become available again
+        bookingSeatRepository.deleteByBookingId(bookingId);
     }
 }
