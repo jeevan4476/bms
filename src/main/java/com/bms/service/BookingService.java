@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.bms.dto.BookingRequest;
 import com.bms.dto.BookingResponse;
+import com.bms.entity.Payment;
 
 public interface BookingService {
 
@@ -14,4 +15,6 @@ public interface BookingService {
     List<BookingResponse> getUserBookings(Long userId);
 
     void cancelBooking(Long bookingId);
+
+    Payment processPayment(Long bookingId);
 }

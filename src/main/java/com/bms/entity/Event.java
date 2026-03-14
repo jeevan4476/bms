@@ -8,9 +8,14 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_event_type", columnList = "eventType")
+})
 public class Event extends BaseEntity {
 
     private String title;

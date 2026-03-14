@@ -1,5 +1,9 @@
 package com.bms.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.bms.dto.ShowRequest;
@@ -14,6 +18,8 @@ import com.bms.repository.VenueRepository;
 @Service
 public class ShowServiceImpl implements ShowService {
 
+    private static final Logger log = LoggerFactory.getLogger(ShowServiceImpl.class);
+
     private final ShowRepository showRepository;
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
@@ -27,7 +33,10 @@ public class ShowServiceImpl implements ShowService {
     }
 
     @Override
+    @CacheEvict(value = "shows", allEntries = true)
     public Show createShow(ShowRequest request) {
+        log.info("Creating show: eventId={}, venueId={}, startTime={}",
+                request.getEventId(), request.getVenueId(), request.getStartTime());
 
         Event event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -43,12 +52,17 @@ public class ShowServiceImpl implements ShowService {
         show.setEndTime(request.getEndTime());
         show.setPrice(request.getPrice());
 
-        return showRepository.save(show);
+        Show saved = showRepository.save(show);
+        log.info("Show created: id={}, event={}, venue={}", saved.getId(),
+                event.getTitle(), venue.getName());
+        return saved;
     }
 
     @Override
+    @Cacheable(value = "shows", key = "#id")
     public Show getShow(Long id) {
-        return showRepository.findById(id)
+        log.info("Fetching show from DB: id={}", id);
+        return showRepository.findByIdWithEventAndVenue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Show not found with id " + id));
     }
 }
