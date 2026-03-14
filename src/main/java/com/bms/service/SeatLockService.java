@@ -3,10 +3,12 @@ package com.bms.service;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnBean(StringRedisTemplate.class)
 public class SeatLockService {
 
     private final StringRedisTemplate redisTemplate;

@@ -34,4 +34,19 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
             @Param("seatIds") List<Long> seatIds);
 
     void deleteByBookingId(Long bookingId);
+
+    /**
+     * Find all booked seats for a given show (read-only, no lock).
+     */
+    List<BookingSeat> findByShowId(Long showId);
+
+    /** Count booked seats per show (for occupancy report) */
+    long countByShowId(Long showId);
+
+    /** Most popular events by total seats booked (confirmed bookings only) */
+    @Query("SELECT bs.show.event.id, bs.show.event.title, COUNT(bs) " +
+           "FROM BookingSeat bs WHERE bs.booking.status = 'CONFIRMED' " +
+           "GROUP BY bs.show.event.id, bs.show.event.title " +
+           "ORDER BY COUNT(bs) DESC")
+    List<Object[]> countSeatsBookedPerEvent();
 }

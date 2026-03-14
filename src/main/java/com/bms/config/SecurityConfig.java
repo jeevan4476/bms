@@ -33,8 +33,23 @@ public class SecurityConfig {
                 .requestMatchers(PathPatternRequestMatcher.pathPattern("/h2-console")).permitAll()
                 .requestMatchers(PathPatternRequestMatcher.pathPattern("/h2-console/**")).permitAll()
 
+                // Static resources & pages
                 .requestMatchers("/", "/error", "/favicon.ico").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/login", "/register", "/logout").permitAll()
 
+                // Public browsing pages
+                .requestMatchers("/events", "/events/**").permitAll()
+                .requestMatchers("/shows", "/shows/**").permitAll()
+
+                // Authenticated user pages
+                .requestMatchers("/my-bookings").authenticated()
+                .requestMatchers("/bookings/**").authenticated()
+
+                // Admin pages
+                .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
+
+                // REST API
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/events/**").permitAll()
                 .requestMatchers("/api/shows/**").permitAll()
@@ -42,6 +57,7 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/bookings/**").hasRole("USER")
+                .requestMatchers("/api/payments/**").hasRole("USER")
 
                 .anyRequest().authenticated()
             )
