@@ -1,5 +1,7 @@
 package com.bms.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.bms.dto.VenueRequest;
@@ -13,6 +15,8 @@ import com.bms.repository.VenueRepository;
 @Service
 public class VenueServiceImpl implements VenueService {
 
+    private static final Logger log = LoggerFactory.getLogger(VenueServiceImpl.class);
+
     private final VenueRepository venueRepository;
     private final SeatRepository seatRepository;
 
@@ -24,6 +28,8 @@ public class VenueServiceImpl implements VenueService {
 
     @Override
     public Venue createVenue(VenueRequest request) {
+        log.info("Creating venue: name={}, location={}, rows={}, seatsPerRow={}",
+                request.getName(), request.getLocation(), request.getRows(), request.getSeatsPerRow());
 
         Venue venue = new Venue();
         venue.setName(request.getName());
@@ -33,6 +39,8 @@ public class VenueServiceImpl implements VenueService {
 
         generateSeats(venue, request.getRows(), request.getSeatsPerRow());
 
+        log.info("Venue created: id={}, name={}, totalSeats={}",
+                venue.getId(), venue.getName(), request.getRows() * request.getSeatsPerRow());
         return venue;
     }
 
@@ -57,6 +65,7 @@ public class VenueServiceImpl implements VenueService {
 
     @Override
     public Venue getVenue(Long id) {
+        log.debug("Fetching venue: id={}", id);
         return venueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id " + id));
     }

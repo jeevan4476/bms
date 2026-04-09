@@ -10,4 +10,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
 
     List<Seat> findByVenueId(Long venueId);
 
+    /** Count total seats for a venue */
+    long countByVenueId(Long venueId);
+
 }
