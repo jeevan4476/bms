@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.bms.entity.Booking;
 import com.bms.entity.Payment;
@@ -24,11 +25,14 @@ class PaymentServiceTest {
     @Mock
     private PaymentRepository paymentRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository);
+        paymentService = new PaymentService(paymentRepository, eventPublisher);
     }
 
     @Test
