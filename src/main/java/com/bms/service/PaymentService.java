@@ -5,12 +5,14 @@ import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.bms.entity.Booking;
 import com.bms.entity.Payment;
 import com.bms.entity_enums.PaymentStatus;
 import com.bms.repository.PaymentRepository;
+import com.bms.service.event.PaymentEvent;
 
 @Service
 public class PaymentService {
@@ -18,9 +20,11 @@ public class PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public PaymentService(PaymentRepository paymentRepository) {
+    public PaymentService(PaymentRepository paymentRepository, ApplicationEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public Payment processPayment(Booking booking) {
@@ -46,7 +50,12 @@ public class PaymentService {
             log.warn("Payment failed: paymentId={}, bookingId={}", payment.getId(), booking.getId());
         }
 
-        return paymentRepository.save(payment);
+        payment = paymentRepository.save(payment);
+        
+        // Publish Event for Observer Pattern
+        eventPublisher.publishEvent(new PaymentEvent(this, payment));
+        
+        return payment;
     }
 
     private boolean simulatePayment() {

@@ -220,21 +220,10 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Booking is not in PENDING state. Current status: " + booking.getStatus());
         }
 
-        // Delegate to PaymentService for simulation
+        // Delegate to PaymentService for simulation. 
+        // NOTE: The Observer Pattern (PaymentEventListener) will handle
+        // updating the booking status and releasing seats based on the payment result!
         Payment payment = paymentService.processPayment(booking);
-
-        // Update booking status based on payment result
-        if (payment.getStatus() == PaymentStatus.SUCCESS) {
-            booking.setStatus(BookingStatus.CONFIRMED);
-            log.info("Payment SUCCESS for booking: id={}, amount={}", bookingId, payment.getAmount());
-        } else {
-            booking.setStatus(BookingStatus.CANCELLED);
-            // Release seats on payment failure
-            bookingSeatRepository.deleteByBookingId(bookingId);
-            log.warn("Payment FAILED for booking: id={}, seats released", bookingId);
-        }
-
-        bookingRepository.save(booking);
 
         return payment;
     }
