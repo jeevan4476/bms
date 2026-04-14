@@ -9,6 +9,10 @@ public class EventRequest {
     private EventType eventType;
     private Integer durationMinutes;
     private String imageUrl;
+    private Long organizerId;
+
+    public Long getOrganizerId() { return organizerId; }
+    public void setOrganizerId(Long organizerId) { this.organizerId = organizerId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

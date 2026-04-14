@@ -49,6 +49,9 @@ public class SecurityConfig {
                 // Admin pages
                 .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
 
+                // Organizer pages
+                .requestMatchers("/organizer/**").hasRole("ORGANIZER")
+
                 // REST API
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/events/**").permitAll()
@@ -56,6 +59,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/organizer/**").hasRole("ORGANIZER")
                 .requestMatchers("/api/bookings/**").hasRole("USER")
                 .requestMatchers("/api/payments/**").hasRole("USER")
 

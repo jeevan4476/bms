@@ -27,11 +27,14 @@ class EventServiceImplTest {
     @Mock
     private EventRepository eventRepository;
 
+    @Mock
+    private com.bms.repository.UserRepository userRepository;
+
     private EventServiceImpl eventService;
 
     @BeforeEach
     void setUp() {
-        eventService = new EventServiceImpl(eventRepository);
+        eventService = new EventServiceImpl(eventRepository, userRepository);
     }
 
     @Test

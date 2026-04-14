@@ -87,6 +87,14 @@ public class DataSeeder implements CommandLineRunner {
         bob = authService.register(bob);
         log.info("Seeded user: id={}, email={}", bob.getId(), bob.getEmail());
 
+        User clark = new User();
+        clark.setName("Clark Kent");
+        clark.setEmail("clark@bms.com");
+        clark.setPassword("clark123");
+        clark.setRole(UserRole.ORGANIZER);
+        clark = authService.register(clark);
+        log.info("Seeded organizer: id={}, email={}", clark.getId(), clark.getEmail());
+
         // --- Events ---
         EventRequest movieReq = new EventRequest();
         movieReq.setTitle("Inception");
@@ -102,6 +110,7 @@ public class DataSeeder implements CommandLineRunner {
         concertReq.setEventType(EventType.CONCERT);
         concertReq.setDurationMinutes(180);
         concertReq.setImageUrl("https://picsum.photos/seed/coldplay/400/250");
+        concertReq.setOrganizerId(clark.getId());
         Event concert = eventService.createEvent(concertReq);
 
         EventRequest sportReq = new EventRequest();
@@ -110,6 +119,7 @@ public class DataSeeder implements CommandLineRunner {
         sportReq.setEventType(EventType.SPORT);
         sportReq.setDurationMinutes(120);
         sportReq.setImageUrl("https://picsum.photos/seed/football/400/250");
+        sportReq.setOrganizerId(clark.getId());
         Event sport = eventService.createEvent(sportReq);
 
         // --- Venues ---
@@ -202,6 +212,7 @@ public class DataSeeder implements CommandLineRunner {
         log.info("=== Demo data seeding complete ===");
         log.info("Login credentials:");
         log.info("  Admin: admin@bms.com / admin123");
+        log.info("  Org:   clark@bms.com / clark123");
         log.info("  User:  alice@example.com / password");
         log.info("  User:  bob@example.com / password");
     }

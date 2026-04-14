@@ -5,11 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bms.dto.EventRequest;
 import com.bms.entity.Event;
 import com.bms.exception.ResourceNotFoundException;
 import com.bms.repository.EventRepository;
+import com.bms.repository.UserRepository;
 
 @Service
 public class EventServiceImpl implements EventService {
@@ -17,12 +19,15 @@ public class EventServiceImpl implements EventService {
     private static final Logger log = LoggerFactory.getLogger(EventServiceImpl.class);
 
     private final EventRepository eventRepository;
+    private final UserRepository userRepository;
 
-    public EventServiceImpl(EventRepository eventRepository) {
+    public EventServiceImpl(EventRepository eventRepository, UserRepository userRepository) {
         this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public Event createEvent(EventRequest request) {
         log.info("Creating event: title={}, type={}", request.getTitle(), request.getEventType());
@@ -34,12 +39,18 @@ public class EventServiceImpl implements EventService {
         event.setDurationMinutes(request.getDurationMinutes());
         event.setImageUrl(request.getImageUrl());
 
+        if (request.getOrganizerId() != null) {
+            userRepository.findById(request.getOrganizerId())
+                .ifPresent(event::setOrganizer);
+        }
+
         Event saved = eventRepository.save(event);
         log.info("Event created: id={}, title={}", saved.getId(), saved.getTitle());
         return saved;
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public Event updateEvent(Long id, EventRequest request) {
         log.info("Updating event: id={}", id);
@@ -53,12 +64,18 @@ public class EventServiceImpl implements EventService {
         event.setDurationMinutes(request.getDurationMinutes());
         event.setImageUrl(request.getImageUrl());
 
+        if (request.getOrganizerId() != null) {
+            userRepository.findById(request.getOrganizerId())
+                .ifPresent(event::setOrganizer);
+        }
+
         Event saved = eventRepository.save(event);
         log.info("Event updated: id={}, title={}", saved.getId(), saved.getTitle());
         return saved;
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public void deleteEvent(Long id) {
         log.info("Deleting event: id={}", id);

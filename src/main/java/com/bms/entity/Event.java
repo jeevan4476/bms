@@ -33,6 +33,18 @@ public class Event extends BaseEntity {
     @JsonManagedReference
     private List<Show> shows;
 
+    @jakarta.persistence.ManyToOne
+    @jakarta.persistence.JoinColumn(name = "organizer_id")
+    private User organizer;
+
+    public User getOrganizer() {
+        return organizer;
+    }
+
+    public void setOrganizer(User organizer) {
+        this.organizer = organizer;
+    }
+
     public String getTitle() {
         return title;
     }
