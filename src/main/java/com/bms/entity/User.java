@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
-public class User extends BaseEntity {
+public class User extends BaseEntity implements Account {
 
     private String name;
 
@@ -47,5 +47,10 @@ public class User extends BaseEntity {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    @Override
+    public String getRoleName() {
+        return role != null ? role.name() : "GUEST";
     }
 }
