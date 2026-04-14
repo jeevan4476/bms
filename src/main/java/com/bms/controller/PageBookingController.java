@@ -27,16 +27,19 @@ public class PageBookingController {
     private final BookingRepository bookingRepository;
     private final BookingSeatRepository bookingSeatRepository;
     private final UserRepository userRepository;
+    private final com.bms.service.PaymentService paymentService;
 
     public PageBookingController(
             BookingService bookingService,
             BookingRepository bookingRepository,
             BookingSeatRepository bookingSeatRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            com.bms.service.PaymentService paymentService) {
         this.bookingService = bookingService;
         this.bookingRepository = bookingRepository;
         this.bookingSeatRepository = bookingSeatRepository;
         this.userRepository = userRepository;
+        this.paymentService = paymentService;
     }
 
     @GetMapping("/my-bookings")
@@ -47,6 +50,10 @@ public class PageBookingController {
 
         List<Booking> bookings = bookingRepository.findByUserIdWithShowAndEvent(user.getId());
         model.addAttribute("bookings", bookings);
+        
+        // Add transaction history for jeevan-cs240's contribution
+        model.addAttribute("transactions", paymentService.getTransactionHistory(user.getId()));
+        
         return "my-bookings";
     }
 

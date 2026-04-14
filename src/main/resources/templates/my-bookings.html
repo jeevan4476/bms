@@ -61,6 +61,40 @@
         <p>You haven't made any bookings yet.</p>
         <a th:href="@{/events}" class="btn btn-primary btn-sm" style="width: auto;">Browse Events</a>
     </div>
+
+    <!-- Transaction History (Member 3: jeevan-cs240 contribution) -->
+    <div style="margin-top: 3rem;">
+        <h2 style="margin-bottom: 1rem;">Transaction History & Payments</h2>
+        <div th:if="${transactions != null and !transactions.isEmpty()}" class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking #</th>
+                        <th>Event</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tx : ${transactions}">
+                        <td th:text="'#' + ${tx.bookingId}">#1</td>
+                        <td th:text="${tx.eventTitle}">Event</td>
+                        <td th:text="'$' + ${#numbers.formatDecimal(tx.amount, 1, 2)}">$20.00</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${tx.status == 'SUCCESS' ? 'badge-confirmed' : 'badge-cancelled'}"
+                                  th:text="${tx.status}">STATUS</span>
+                        </td>
+                        <td th:text="${#temporals.format(tx.timestamp, 'MMM dd, yyyy hh:mm a')}">Mar 14</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:if="${transactions == null or transactions.isEmpty()}">
+            <p style="color: #64748b;">No transaction records found.</p>
+        </div>
+    </div>
 </div>
 
 </body>
