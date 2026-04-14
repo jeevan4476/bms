@@ -23,35 +23,50 @@ public class SeatLockService {
     }
 
     public boolean lockSeat(Long showId, Long seatId, String userId) {
-        if (redisTemplate == null) return true; // Fallback: allow if Redis is missing
-        String key = getKey(showId, seatId);
-
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(
-                key,
-                userId,
-                LOCK_TTL,
-                TimeUnit.SECONDS
-        );
-
-        return Boolean.TRUE.equals(success);
+        if (redisTemplate == null) return true;
+        try {
+            String key = getKey(showId, seatId);
+            Boolean success = redisTemplate.opsForValue().setIfAbsent(
+                    key,
+                    userId,
+                    LOCK_TTL,
+                    TimeUnit.SECONDS
+            );
+            return Boolean.TRUE.equals(success);
+        } catch (Exception e) {
+            // Redis is down or misconfigured, fallback to allowing the selection
+            return true;
+        }
     }
 
     public void releaseSeat(Long showId, Long seatId) {
         if (redisTemplate == null) return;
-        String key = getKey(showId, seatId);
-        redisTemplate.delete(key);
+        try {
+            String key = getKey(showId, seatId);
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            // Ignore
+        }
     }
 
     public boolean isSeatLocked(Long showId, Long seatId) {
         if (redisTemplate == null) return false;
-        String key = getKey(showId, seatId);
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        try {
+            String key = getKey(showId, seatId);
+            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String getLockOwner(Long showId, Long seatId) {
         if (redisTemplate == null) return null;
-        String key = getKey(showId, seatId);
-        return redisTemplate.opsForValue().get(key);
+        try {
+            String key = getKey(showId, seatId);
+            return redisTemplate.opsForValue().get(key);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean lockSeats(Long showId, List<Long> seatIds, String userId) {
