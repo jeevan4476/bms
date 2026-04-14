@@ -4,54 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'BMS – ' + ${show.event.title}">BMS - Select Seats</title>
+    <title th:text="'BMS - ' + ${show.event.title}">BMS - Select Seats</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- HTMX Loaded for API calls -->
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf?.token}"/>
+    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf?.headerName}"/>
 </head>
 <body>
 
 <nav th:replace="~{fragments/layout :: navbar}"></nav>
 
 <div class="show-page-wrapper">
-
-    <!-- ════ LEFT SIDEBAR ════ -->
     <aside class="show-sidebar">
-        <!-- Back link -->
-        <a th:href="@{/events/{id}(id=${show.event.id})}" class="back-link">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
-            Back to Event
-        </a>
+        <a th:href="@{/events/{id}(id=${show.event.id})}" class="back-link">Back to Event</a>
 
-        <!-- Event identity -->
         <div class="sidebar-event">
             <div class="sidebar-event-badge" th:text="${show.event.eventType}">SPORT</div>
             <h2 th:text="${show.event.title}">Event Title</h2>
             <p class="sidebar-venue" th:text="${show.venue.name}">Venue</p>
-            <p class="sidebar-time" th:text="${#temporals.format(show.startTime, 'EEE, MMM dd • hh:mm a')}">Time</p>
+            <p class="sidebar-time" th:text="${#temporals.format(show.startTime, 'EEE, MMM dd - hh:mm a')}">Time</p>
         </div>
 
-        <!-- Price categories (driven by sections) — use th:attr for HTMX attributes -->
         <div class="price-legend" th:if="${sections != null and !sections.isEmpty()}">
-            <h4>Sections / Zones</h4>
+            <h4>Sections</h4>
             <div th:each="section : ${sections}"
                  class="price-cat"
                  th:classappend="${section == activeSection} ? ' active' : ''"
-                 th:attr="hx-get=@{/shows/{id}(id=${show.id},section=${section})},hx-target='#seat-zone',hx-swap='innerHTML'"
-                 th:onclick="'selectSection(this, \'' + ${section} + '\')'">
-                <span class="price-cat-dot"
-                      th:classappend="${#strings.containsIgnoreCase(section,'VIP') or #strings.containsIgnoreCase(section,'Floor') or #strings.containsIgnoreCase(section,'Club') or #strings.containsIgnoreCase(section,'Front')} ? ' vip'
-                                     : (${#strings.containsIgnoreCase(section,'Premium') or #strings.containsIgnoreCase(section,'North') or #strings.containsIgnoreCase(section,'Circle') or #strings.containsIgnoreCase(section,'Balcony') or #strings.containsIgnoreCase(section,'West')} ? ' premium' : '')">
-                </span>
+                 th:data-url="@{/shows/{id}(id=${show.id},section=${section})}"
+                 th:data-section="${section}">
+                <span class="price-cat-dot"></span>
                 <span th:text="${section}">Section</span>
             </div>
         </div>
 
-        <!-- Flash messages -->
-        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-
-        <!-- Booking summary -->
         <div class="sidebar-summary">
             <h4>Your Selection</h4>
             <div class="summary-line"><span>Seats</span><span id="sel-count">0</span></div>
@@ -59,146 +46,64 @@
             <div id="sel-seats-list" class="sel-tags"></div>
         </div>
 
-        <!-- Book button form -->
         <form th:action="@{/shows/{id}/book(id=${show.id})}" method="post" id="booking-form">
             <div id="seat-hidden-inputs"></div>
-            <button type="submit" id="book-btn" class="btn-book" disabled>
-                Book Now
-            </button>
-            <p id="login-prompt" style="display:none; text-align:center; font-size:.85rem; margin-top:.5rem;">
+            <button type="submit" id="book-btn" class="btn-book" disabled>Book Now</button>
+            <div id="login-prompt" style="display:none; text-align:center; padding:10px;">
                 <a th:href="@{/login}">Log in</a> to book seats.
-            </p>
+            </div>
         </form>
     </aside>
 
-    <!-- ════ MAIN CONTENT ════ -->
     <main class="show-main">
-
-        <!-- ── STADIUM LAYOUT ── -->
         <div th:if="${layoutType == 'STADIUM'}" class="venue-visual stadium-visual">
-            <p class="venue-visual-hint">🏟 Click a stand to view its seats</p>
             <svg viewBox="0 0 600 420" class="stadium-svg" xmlns="http://www.w3.org/2000/svg">
-                <!-- Outer oval -->
                 <ellipse cx="300" cy="210" rx="285" ry="200" fill="#dde3ea" stroke="#b5bfc9" stroke-width="2"/>
-                <!-- Inner pitch -->
                 <ellipse cx="300" cy="210" rx="175" ry="120" fill="#2d8a3e"/>
-                <!-- Pitch lines -->
                 <ellipse cx="300" cy="210" rx="160" ry="106" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
                 <line x1="300" y1="90" x2="300" y2="330" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-                <circle cx="300" cy="210" r="28" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-                <circle cx="300" cy="210" r="3" fill="white"/>
-                <!-- Goal boxes -->
-                <rect x="232" y="165" width="66" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
-                <rect x="302" y="165" width="66" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
-
-                <!-- NORTH STAND (top arc) -->
-                <path d="M 115,30 A 200,200 0 0,1 485,30 Q 300,75 115,30 Z"
-                      class="stand-section" id="svg-North Stand"
-                      th:classappend="${activeSection == 'North Stand'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'North Stand')"/>
-                <text x="300" y="50" text-anchor="middle" class="stand-label">NORTH</text>
-
-                <!-- SOUTH STAND (bottom arc) -->
-                <path d="M 115,390 A 200,200 0 0,0 485,390 Q 300,345 115,390 Z"
-                      class="stand-section" id="svg-South Stand"
-                      th:classappend="${activeSection == 'South Stand'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'South Stand')"/>
-                <text x="300" y="408" text-anchor="middle" class="stand-label">SOUTH</text>
-
-                <!-- EAST STAND (right arc) -->
-                <path d="M 555,80 A 200,200 0 0,1 555,340 Q 510,210 555,80 Z"
-                      class="stand-section" id="svg-East Stand"
-                      th:classappend="${activeSection == 'East Stand'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'East Stand')"/>
-                <text x="573" y="215" text-anchor="middle" class="stand-label" transform="rotate(90,573,215)">EAST</text>
-
-                <!-- WEST STAND (left arc) -->
-                <path d="M 45,80 A 200,200 0 0,0 45,340 Q 90,210 45,80 Z"
-                      class="stand-section" id="svg-West Stand"
-                      th:classappend="${activeSection == 'West Stand'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'West Stand')"/>
-                <text x="27" y="215" text-anchor="middle" class="stand-label" transform="rotate(-90,27,215)">WEST</text>
-
-                <!-- AWAY END (bottom-right) -->
-                <path d="M 485,340 Q 555,340 555,270 Q 520,310 485,340 Z"
-                      class="stand-section" id="svg-Away End"
-                      th:classappend="${activeSection == 'Away End'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'Away End')"/>
-                <text x="525" y="330" text-anchor="middle" font-size="8" class="stand-label">AWAY</text>
-
-                <!-- CLUB LOUNGE (top-right) -->
-                <path d="M 485,80 Q 555,80 555,150 Q 520,110 485,80 Z"
-                      class="stand-section" id="svg-Club Lounge"
-                      th:classappend="${activeSection == 'Club Lounge'} ? ' stand-active' : ''"
-                      onclick="svgStandClick(this, 'Club Lounge')"/>
-                <text x="527" y="100" text-anchor="middle" font-size="8" class="stand-label">VIP</text>
+                <path d="M 115,30 A 200,200 0 0,1 485,30 Q 300,75 115,30 Z" class="stand-section" data-stand="North Stand"/>
+                <text x="300" y="50" text-anchor="middle" class="stand-label" style="pointer-events:none;">NORTH</text>
+                <path d="M 115,390 A 200,200 0 0,0 485,390 Q 300,345 115,390 Z" class="stand-section" data-stand="South Stand"/>
+                <text x="300" y="408" text-anchor="middle" class="stand-label" style="pointer-events:none;">SOUTH</text>
+                <path d="M 555,80 A 200,200 0 0,1 555,340 Q 510,210 555,80 Z" class="stand-section" data-stand="East Stand"/>
+                <text x="573" y="215" text-anchor="middle" class="stand-label" transform="rotate(90,573,215)" style="pointer-events:none;">EAST</text>
+                <path d="M 45,80 A 200,200 0 0,0 45,340 Q 90,210 45,80 Z" class="stand-section" data-stand="West Stand"/>
+                <text x="27" y="215" text-anchor="middle" class="stand-label" transform="rotate(-90,27,215)" style="pointer-events:none;">WEST</text>
             </svg>
         </div>
 
-        <!-- ── CONCERT LAYOUT ── -->
         <div th:if="${layoutType == 'CONCERT_ARENA'}" class="venue-visual concert-visual">
-            <p class="venue-visual-hint">🎵 Select a zone from the sidebar</p>
             <div class="concert-diagram">
-                <div class="concert-stage"><span>STAGE</span></div>
-                <div th:each="section, sectionStat : ${sections}"
-                     class="concert-zone"
-                     th:classappend="'zone-' + ${sectionStat.index}"
-                     th:text="${section}">FLOOR</div>
+                <div class="concert-stage">STAGE</div>
+                <!-- Semi-circle zones -->
+                <div th:each="section, sectionStat : ${sections}" 
+                     class="concert-zone" 
+                     th:classappend="'zone-' + ${sectionStat.index}">
+                    <span class="zone-label" th:text="${section}">FLOOR</span>
+                </div>
             </div>
         </div>
 
-        <!-- ── THEATRE LAYOUT ── -->
         <div th:if="${layoutType == 'THEATRE'}" class="venue-visual theatre-visual">
             <div class="theatre-screen-bar"></div>
             <p style="font-size:0.7rem; letter-spacing:3px; color:#64748b; margin-top:0.5rem;">SCREEN</p>
         </div>
 
-        <!-- ── SEAT GRID (shared, HTMX live reload target) ── -->
         <div class="seat-area">
-            <div id="seat-zone"
-                 th:attr="hx-get=@{/shows/{id}(id=${show.id},section=${activeSection})}"
-                 hx-trigger="every 8s"
-                 hx-swap="innerHTML"
-                 hx-on:htmx:after-swap="syncSelectionState()">
-                <!-- Fragment returned by HTMX polls -->
+            <!-- seat-zone is no longer directly controlled by HTMX attributes to avoid Thymeleaf 3.1 issues -->
+            <div id="seat-zone">
                 <div th:fragment="seatMapFragment">
                     <div class="seat-section-header" th:if="${activeSection != null}">
                         <span th:text="${activeSection}">Section</span>
                     </div>
-
-                    <div th:if="${seatMap.isEmpty()}" class="empty-state" style="padding:2rem;">
-                        <p>No seats found. Click a section in the sidebar.</p>
-                    </div>
-
-                    <div th:each="entry : ${seatMap}"
-                         class="seat-row"
-                         th:classappend="${layoutType == 'CONCERT_ARENA'} ? ' concert-row' : (${layoutType == 'THEATRE'} ? ' theatre-row' : '')">
+                    <div th:each="entry : ${seatMap}" class="seat-row" th:classappend="${layoutType == 'CONCERT_ARENA'} ? ' concert-row' : (${layoutType == 'THEATRE'} ? ' theatre-row' : '')">
                         <span class="seat-row-label" th:text="${entry.key}">A</span>
-                        <div th:each="seat : ${entry.value}"
-                             th:id="'seat-' + ${seat.id}"
-                             class="seat"
-                             th:classappend="${seat.status == 'BOOKED'} ? ' seat-booked'
-                                          : (${seat.status == 'LOCKED_BY_ME'} ? ' seat-locked-me'
-                                          : (${seat.status == 'LOCKED_BY_OTHER'} ? ' seat-locked-other'
-                                          : (${#strings.toString(seat.seatType) == 'VIP'} ? ' seat-vip'
-                                          : (${#strings.toString(seat.seatType) == 'PREMIUM'} ? ' seat-premium' : ''))))"
-                             th:data-id="${seat.id}"
-                             th:data-row="${seat.row}"
-                             th:data-number="${seat.number}"
-                             th:data-section="${seat.section}"
-                             th:onclick="${seat.status == 'BOOKED' or seat.status == 'LOCKED_BY_OTHER'} ? 'void(0)' : 'toggleSeat(this)'"
-                             th:title="${seat.status == 'LOCKED_BY_OTHER'} ? 'Taken by another user' : (${seat.status == 'BOOKED'} ? 'Already booked' : '')"
-                             th:text="${seat.number}">1</div>
-                    </div>
-
-                    <!-- Legend -->
-                    <div class="seat-legend">
-                        <div class="seat-legend-item"><div class="seat-legend-box available"></div><span>Available</span></div>
-                        <div class="seat-legend-item"><div class="seat-legend-box selected"></div><span>Selected</span></div>
-                        <div class="seat-legend-item"><div class="seat-legend-box vip-box"></div><span>VIP</span></div>
-                        <div class="seat-legend-item"><div class="seat-legend-box premium-box"></div><span>Premium</span></div>
-                        <div class="seat-legend-item"><div class="seat-legend-box locked-other"></div><span>Taken</span></div>
-                        <div class="seat-legend-item"><div class="seat-legend-box booked"></div><span>Booked</span></div>
+                        <div th:each="seat : ${entry.value}" th:id="'seat-' + ${seat.id}" class="seat" 
+                             th:classappend="${seat.status == 'BOOKED'} ? ' seat-booked' : (${seat.status == 'LOCKED_BY_ME'} ? ' seat-locked-me' : (${seat.status == 'LOCKED_BY_OTHER'} ? ' seat-locked-other' : ''))"
+                             th:data-id="${seat.id}" th:data-row="${seat.row}" th:data-number="${seat.number}" th:data-status="${seat.status}">
+                            <span th:text="${seat.number}">1</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -211,154 +116,113 @@
     var PRICE_PER_SEAT = [[${show.price}]];
     var SHOW_ID        = [[${show.id}]];
     var IS_AUTH        = [[${#authorization.expression('isAuthenticated()')}]];
+    var currentSection = [[${activeSection}]];
     var selectedSeats  = [];
 
-    // Pick up any server-side LOCKED_BY_ME seats on initial load
-    document.querySelectorAll('.seat-locked-me').forEach(function(el) {
-        selectedSeats.push({
-            id:     el.getAttribute('data-id'),
-            row:    el.getAttribute('data-row'),
-            number: el.getAttribute('data-number')
+    // ── Global click listener ──
+    document.addEventListener('click', function(e) {
+        var cat = e.target.closest('.price-cat');
+        if (cat) loadSection(cat.getAttribute('data-url'), cat.getAttribute('data-section'));
+        
+        var stand = e.target.closest('.stand-section');
+        if (stand) {
+            var name = stand.getAttribute('data-stand');
+            var catEl = document.querySelector('.price-cat[data-section="'+name+'"]');
+            if (catEl) loadSection(catEl.getAttribute('data-url'), name);
+        }
+        
+        var seat = e.target.closest('.seat');
+        if (seat) {
+            var st = seat.getAttribute('data-status');
+            if (st !== 'BOOKED' && st !== 'LOCKED_BY_OTHER') toggleSeat(seat);
+        }
+    });
+
+    // Handle HTMX events for syncing state
+    document.addEventListener('htmx:afterSwap', function(e) {
+        if (e.detail.target.id === 'seat-zone') {
+            syncSelectionState();
+        }
+    });
+
+    function loadSection(url, name) {
+        if (!url) return;
+        currentSection = name;
+        document.querySelectorAll('.price-cat').forEach(function(c){ 
+            c.classList.toggle('active', c.getAttribute('data-section')===name); 
         });
+        htmx.ajax('GET', url, {target: '#seat-zone', swap: 'innerHTML'});
+    }
+
+    // ── Polling: Every 8 seconds ──
+    setInterval(function() {
+        if (!currentSection) return;
+        var url = '/shows/' + SHOW_ID + '?section=' + encodeURIComponent(currentSection);
+        htmx.ajax('GET', url, {target: '#seat-zone', swap: 'innerHTML'});
+    }, 8000);
+
+    // Initial state
+    document.querySelectorAll('.seat-locked-me').forEach(function(el) {
+        selectedSeats.push({id: el.getAttribute('data-id'), row: el.getAttribute('data-row'), number: el.getAttribute('data-number')});
     });
     updateSummary();
 
-    // ── After HTMX poll swap: re-apply local selection state ──
     function syncSelectionState() {
         selectedSeats.forEach(function(s) {
             var el = document.getElementById('seat-' + s.id);
-            if (el && !el.classList.contains('seat-booked') && !el.classList.contains('seat-locked-other')) {
-                el.classList.add('seat-locked-me');
+            if (el) {
+                var st = el.getAttribute('data-status');
+                if (st === 'BOOKED' || st === 'LOCKED_BY_OTHER') {
+                    selectedSeats = selectedSeats.filter(function(i){ return i.id !== s.id; });
+                } else { el.classList.add('seat-locked-me'); }
             }
         });
         updateSummary();
     }
 
-    // ── Toggle seat selection via API ──
     async function toggleSeat(el) {
         if (!IS_AUTH) { window.location.href = '/login'; return; }
-
-        var seatId  = el.getAttribute('data-id');
-        var row     = el.getAttribute('data-row');
-        var num     = el.getAttribute('data-number');
-
-        // Optimistic UI: add pending state
+        var seatId = el.getAttribute('data-id');
         el.style.opacity = '0.5';
-
         try {
-            const res = await fetch('/api/locks/shows/' + SHOW_ID + '/seats/' + seatId + '/toggle', {
+            var csrfEl = document.querySelector('meta[name="_csrf"]');
+            var headerEl = document.querySelector('meta[name="_csrf_header"]');
+            var headers = {'Content-Type': 'application/json'};
+            if (csrfEl && headerEl) {
+                headers[headerEl.content] = csrfEl.content;
+            }
+            
+            var res = await fetch('/api/locks/shows/'+SHOW_ID+'/seats/'+seatId+'/toggle', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 credentials: 'same-origin'
             });
-
             el.style.opacity = '1';
-
             if (res.ok) {
-                const data = await res.json();
+                var data = await res.json();
                 if (data.status === 'LOCKED_BY_ME') {
-                    el.classList.remove('seat-vip', 'seat-premium');
                     el.classList.add('seat-locked-me');
-                    if (!selectedSeats.find(function(s){ return s.id === seatId; })) {
-                        selectedSeats.push({ id: seatId, row: row, number: num });
-                    }
+                    el.setAttribute('data-status', 'LOCKED_BY_ME');
+                    selectedSeats.push({id: seatId, row: el.getAttribute('data-row'), number: el.getAttribute('data-number')});
                 } else {
-                    // Unlocked / toggled off
                     el.classList.remove('seat-locked-me');
+                    el.setAttribute('data-status', 'AVAILABLE');
                     selectedSeats = selectedSeats.filter(function(s){ return s.id !== seatId; });
                 }
                 updateSummary();
-            } else if (res.status === 401) {
-                window.location.href = '/login';
-            } else if (res.status === 409) {
-                el.classList.remove('seat-vip', 'seat-premium');
-                el.classList.add('seat-locked-other');
-                el.style.cursor = 'not-allowed';
-                el.onclick = function() {};
-                showToast('⚡ This seat was just selected by another user!');
-            } else {
-                showToast('Could not select seat. Please try again.');
             }
-        } catch (err) {
-            el.style.opacity = '1';
-            console.error('Lock error:', err);
-            showToast('Connection error. Please try again.');
-        }
+        } catch (err) { el.style.opacity = '1'; }
     }
 
-    // ── Sidebar section click ──
-    function selectSection(el, sectionName) {
-        document.querySelectorAll('.price-cat').forEach(function(c) {
-            c.classList.toggle('active', c === el);
-        });
-        // Highlight SVG stand if in stadium mode
-        var svgEl = document.getElementById('svg-' + sectionName);
-        if (svgEl) {
-            document.querySelectorAll('.stand-section').forEach(function(s) { s.classList.remove('stand-active'); });
-            svgEl.classList.add('stand-active');
-        }
-    }
-
-    // ── SVG stand click: triggers HTMX + sidebar highlight ──
-    function svgStandClick(svgEl, sectionName) {
-        // Highlight SVG stand
-        document.querySelectorAll('.stand-section').forEach(function(s) { s.classList.remove('stand-active'); });
-        svgEl.classList.add('stand-active');
-
-        // Highlight sidebar item
-        document.querySelectorAll('.price-cat').forEach(function(c) {
-            var label = c.querySelector('span:last-child');
-            var isMatch = label && label.textContent.trim() === sectionName;
-            c.classList.toggle('active', isMatch);
-        });
-
-        // Trigger HTMX load for this section
-        htmx.ajax('GET', '/shows/' + SHOW_ID + '?section=' + encodeURIComponent(sectionName), {
-            target: '#seat-zone',
-            swap: 'innerHTML'
-        }).then(function() { syncSelectionState(); });
-    }
-
-    // ── Summary sidebar ──
     function updateSummary() {
         var count = selectedSeats.length;
         document.getElementById('sel-count').textContent = count;
         document.getElementById('sel-total').textContent = '$' + (count * PRICE_PER_SEAT).toFixed(2);
-
-        var tagsEl = document.getElementById('sel-seats-list');
-        tagsEl.innerHTML = selectedSeats.map(function(s) {
-            return '<span class="sel-tag">' + (s.row || '') + s.number + '</span>';
-        }).join('');
-
+        document.getElementById('sel-seats-list').innerHTML = selectedSeats.map(function(s){ return '<span class="sel-tag">'+(s.row||'')+s.number+'</span>'; }).join('');
         var btn = document.getElementById('book-btn');
-        var lp  = document.getElementById('login-prompt');
-        if (!IS_AUTH) {
-            btn.style.display = 'none';
-            lp.style.display  = 'block';
-        } else {
-            btn.disabled = count === 0;
-        }
-
-        // Sync hidden form inputs
-        var container = document.getElementById('seat-hidden-inputs');
-        container.innerHTML = selectedSeats.map(function(s) {
-            return '<input type="hidden" name="seatIds" value="' + s.id + '">';
-        }).join('');
-    }
-
-    // ── Toast notification ──
-    function showToast(msg) {
-        var existing = document.querySelector('.toast-msg');
-        if (existing) existing.remove();
-        var t = document.createElement('div');
-        t.className = 'toast-msg';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        requestAnimationFrame(function() { t.classList.add('visible'); });
-        setTimeout(function() {
-            t.classList.remove('visible');
-            setTimeout(function() { t.remove(); }, 400);
-        }, 3000);
+        if (!IS_AUTH) { btn.style.display = 'none'; document.getElementById('login-prompt').style.display='block'; }
+        else { btn.disabled = count === 0; }
+        document.getElementById('seat-hidden-inputs').innerHTML = selectedSeats.map(function(s){ return '<input type="hidden" name="seatIds" value="'+s.id+'">'; }).join('');
     }
     /*]]>*/
 </script>
