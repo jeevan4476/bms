@@ -196,6 +196,7 @@ public class PageAdminController {
         model.addAttribute("revenuePerEvent", reportService.getRevenuePerEvent());
         model.addAttribute("popularEvents", reportService.getPopularEvents());
         model.addAttribute("seatOccupancy", reportService.getSeatOccupancy());
+        model.addAttribute("showPerformance", reportService.getShowPerformance());
         return "admin/reports";
     }
 }

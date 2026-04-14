@@ -133,6 +133,41 @@
                 </tr>
             </tbody>
         </table>
+    <!-- Show Performance Analytics -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1rem;">Show Performance Analytics</h2>
+        <div th:if="${#lists.isEmpty(showPerformance)}" style="color: #64748b; padding: 1rem;">
+            No performance data available yet.
+        </div>
+        <table th:unless="${#lists.isEmpty(showPerformance)}" class="table">
+            <thead>
+                <tr>
+                    <th>Show</th>
+                    <th>Venue</th>
+                    <th>Occupancy</th>
+                    <th>Revenue</th>
+                    <th>Efficiency ($/Seat)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="report : ${showPerformance}">
+                    <td>
+                        <div style="font-weight: 600;" th:text="${report.eventTitle}">Event</div>
+                        <div style="font-size: 0.8rem; color: #64748b;" th:text="'ID: #' + ${report.showId}">#1</div>
+                    </td>
+                    <td th:text="${report.venueName}">Venue</td>
+                    <td>
+                        <span th:text="${report.occupancyPercent}">0</span>%
+                    </td>
+                    <td>$<span th:text="${#numbers.formatDecimal(report.revenue, 1, 2)}">0.00</span></td>
+                    <td>
+                        <span style="font-weight: 600; color: #2563eb;">
+                            $<span th:text="${#numbers.formatDecimal(report.revenuePerSeat, 1, 2)}">0.00</span>
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 

@@ -98,28 +98,43 @@ public class ReportService {
 
     /** Seat occupancy per show */
     public List<SeatOccupancyReport> getSeatOccupancy() {
-        log.info("Fetching seat occupancy report");
-        List<Show> shows = showRepository.findAllWithEventAndVenue();
-        List<SeatOccupancyReport> reports = new ArrayList<>();
+// ... existing code
+    }
 
+    /** Detailed performance per show (Revenue + Efficiency) */
+    public List<com.bms.dto.ShowPerformanceReport> getShowPerformance() {
+        log.info("Fetching advanced show performance report");
+        List<Show> shows = showRepository.findAllWithEventAndVenue();
+        List<Object[]> revenueRows = bookingRepository.sumRevenuePerShow();
+        
+        java.util.Map<Long, Double> revenueMap = new java.util.HashMap<>();
+        for (Object[] row : revenueRows) {
+            revenueMap.put((Long) row[0], (Double) row[1]);
+        }
+
+        List<com.bms.dto.ShowPerformanceReport> reports = new ArrayList<>();
         for (Show show : shows) {
             long totalSeats = seatRepository.countByVenueId(show.getVenue().getId());
             long bookedSeats = bookingSeatRepository.countByShowId(show.getId());
+            double revenue = revenueMap.getOrDefault(show.getId(), 0.0);
 
             double occupancy = totalSeats > 0
                     ? Math.round((double) bookedSeats / totalSeats * 10000.0) / 100.0
                     : 0.0;
+            
+            double revPerSeat = totalSeats > 0 ? revenue / totalSeats : 0.0;
 
-            reports.add(new SeatOccupancyReport(
+            reports.add(new com.bms.dto.ShowPerformanceReport(
                     show.getId(),
                     show.getEvent().getTitle(),
                     show.getVenue().getName(),
                     totalSeats,
                     bookedSeats,
-                    occupancy
+                    occupancy,
+                    revenue,
+                    revPerSeat
             ));
         }
-
         return reports;
     }
 }

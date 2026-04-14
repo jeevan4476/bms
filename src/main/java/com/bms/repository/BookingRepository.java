@@ -35,6 +35,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            "ORDER BY SUM(b.totalAmount) DESC")
     List<Object[]> sumRevenuePerEvent();
 
+    /** Revenue per show (confirmed only) */
+    @Query("SELECT b.show.id, COALESCE(SUM(b.totalAmount), 0) " +
+           "FROM Booking b WHERE b.status = 'CONFIRMED' " +
+           "GROUP BY b.show.id")
+    List<Object[]> sumRevenuePerShow();
+
     // --- JOIN FETCH queries for N+1 fix (Phase 9) ---
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.show s JOIN FETCH s.event JOIN FETCH b.user WHERE b.user.id = :userId")
