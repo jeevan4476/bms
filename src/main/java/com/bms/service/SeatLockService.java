@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 public class SeatLockService {
 
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private final java.util.concurrent.ConcurrentHashMap<String, String> localLocks = new java.util.concurrent.ConcurrentHashMap<>();
 
     public SeatLockService(java.util.Optional<org.springframework.data.redis.core.StringRedisTemplate> redisTemplate) {
         this.redisTemplate = redisTemplate.orElse(null);
@@ -23,50 +24,62 @@ public class SeatLockService {
     }
 
     public boolean lockSeat(Long showId, Long seatId, String userId) {
-        if (redisTemplate == null) return true;
-        try {
-            String key = getKey(showId, seatId);
-            Boolean success = redisTemplate.opsForValue().setIfAbsent(
-                    key,
-                    userId,
-                    LOCK_TTL,
-                    TimeUnit.SECONDS
-            );
-            return Boolean.TRUE.equals(success);
-        } catch (Exception e) {
-            // Redis is down or misconfigured, fallback to allowing the selection
-            return true;
+        String key = getKey(showId, seatId);
+        if (redisTemplate != null) {
+            try {
+                Boolean success = redisTemplate.opsForValue().setIfAbsent(
+                        key,
+                        userId,
+                        LOCK_TTL,
+                        TimeUnit.SECONDS
+                );
+                if (Boolean.TRUE.equals(success)) return true;
+            } catch (Exception e) {
+                // Redis failing, fallback to local memory
+            }
         }
+        // Memory fallback
+        return localLocks.putIfAbsent(key, userId) == null;
     }
 
     public void releaseSeat(Long showId, Long seatId) {
-        if (redisTemplate == null) return;
-        try {
-            String key = getKey(showId, seatId);
-            redisTemplate.delete(key);
-        } catch (Exception e) {
-            // Ignore
+        String key = getKey(showId, seatId);
+        localLocks.remove(key);
+        if (redisTemplate != null) {
+            try {
+                redisTemplate.delete(key);
+            } catch (Exception e) {
+                // Ignore
+            }
         }
     }
 
     public boolean isSeatLocked(Long showId, Long seatId) {
-        if (redisTemplate == null) return false;
-        try {
-            String key = getKey(showId, seatId);
-            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
-        } catch (Exception e) {
-            return false;
+        String key = getKey(showId, seatId);
+        if (localLocks.containsKey(key)) return true;
+        if (redisTemplate != null) {
+            try {
+                return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+            } catch (Exception e) {
+                return false;
+            }
         }
+        return false;
     }
 
     public String getLockOwner(Long showId, Long seatId) {
-        if (redisTemplate == null) return null;
-        try {
-            String key = getKey(showId, seatId);
-            return redisTemplate.opsForValue().get(key);
-        } catch (Exception e) {
-            return null;
+        String key = getKey(showId, seatId);
+        String localOwner = localLocks.get(key);
+        if (localOwner != null) return localOwner;
+
+        if (redisTemplate != null) {
+            try {
+                return redisTemplate.opsForValue().get(key);
+            } catch (Exception e) {
+                return null;
+            }
         }
+        return null;
     }
 
     public boolean lockSeats(Long showId, List<Long> seatIds, String userId) {

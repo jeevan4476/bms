@@ -53,7 +53,11 @@ public class PageShowController {
     }
 
     @GetMapping("/shows/{id}")
-    public String showDetail(@PathVariable Long id, Model model, Authentication authentication) {
+    public String showDetail(@PathVariable Long id, 
+                            Model model, 
+                            Authentication authentication,
+                            @org.springframework.web.bind.annotation.RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        
         Show show = showService.getShow(id);
         List<Seat> allSeats = seatRepository.findByVenueId(show.getVenue().getId());
         String currentUserId = (authentication != null) ? authentication.getName() : null;
@@ -101,6 +105,10 @@ public class PageShowController {
         model.addAttribute("show", show);
         model.addAttribute("seatMap", seatMap);
         model.addAttribute("bookedSeatIds", bookedSeatIds);
+
+        if (htmxRequest) {
+            return "show-detail :: seatMapFragment";
+        }
         return "show-detail";
     }
 

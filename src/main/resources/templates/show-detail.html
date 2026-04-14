@@ -46,17 +46,26 @@
             <h3 style="margin-bottom: 1.5rem; text-align: center; color: #1e293b;">Select Your Seats</h3>
             <div class="screen"></div>
             <div style="margin-top: 2.5rem;">
-                <div th:each="entry : ${seatMap}" class="seat-row">
-                    <span class="seat-row-label" th:text="${entry.key}">A</span>
-                    <div th:each="seat : ${entry.value}"
-                         th:id="'seat-' + ${seat.id}"
-                         th:classappend="${seat.status == 'BOOKED' ? 'seat-booked' : (seat.status == 'LOCKED_BY_ME' ? 'seat-locked-me' : (seat.status == 'LOCKED_BY_OTHER' ? 'seat-locked-other' : ''))}"
-                         th:data-id="${seat.id}"
-                         th:data-row="${seat.row}"
-                         th:data-number="${seat.number}"
-                         class="seat"
-                         th:onclick="${seat.status == 'BOOKED' || seat.status == 'LOCKED_BY_OTHER'} ? '' : 'toggleSeat(this)'"
-                         th:text="${seat.number}">1</div>
+                <div id="seat-map-container" 
+                     th:hx-get="@{/shows/{id}(id=${show.id})}" 
+                     hx-trigger="every 5s" 
+                     hx-swap="innerHTML"
+                     hx-on::after-swap="syncSelectionWithMap()">
+                    
+                    <div th:fragment="seatMapFragment" class="seat-grid">
+                        <div th:each="entry : ${seatMap}" class="seat-row">
+                            <span class="seat-row-label" th:text="${entry.key}">A</span>
+                            <div th:each="seat : ${entry.value}"
+                                 th:id="'seat-' + ${seat.id}"
+                                 th:classappend="${seat.status == 'BOOKED' ? 'seat-booked' : (seat.status == 'LOCKED_BY_ME' ? 'seat-locked-me' : (seat.status == 'LOCKED_BY_OTHER' ? 'seat-locked-other' : ''))}"
+                                 th:data-id="${seat.id}"
+                                 th:data-row="${seat.row}"
+                                 th:data-number="${seat.number}"
+                                 class="seat"
+                                 th:onclick="${seat.status == 'BOOKED' || seat.status == 'LOCKED_BY_OTHER'} ? '' : 'toggleSeat(this)'"
+                                 th:text="${seat.number}">1</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="seat-legend">
@@ -137,6 +146,22 @@
     });
     updateSummary();
 
+    // Keep selectedSeats in sync with what's manually selected in the UI
+    function syncSelectionWithMap() {
+        // Clear current array and rebuild from seats that have 'seat-locked-me' class
+        // This ensures the summary sidebar reflects the server state after every poll.
+        var newSelection = [];
+        document.querySelectorAll('.seat-locked-me').forEach(function(el) {
+            newSelection.push({
+                id: el.getAttribute('data-id'),
+                row: el.getAttribute('data-row'),
+                number: el.getAttribute('data-number')
+            });
+        });
+        selectedSeats = newSelection;
+        updateSummary();
+    }
+
     async function toggleSeat(el) {
         if (!isAuthenticated) {
             window.location.href = '/login';
@@ -148,38 +173,30 @@
         var num = el.getAttribute('data-number');
 
         try {
-            // Call API to toggle Redis lock
             const response = await fetch(`/api/locks/shows/${showId}/seats/${seatId}/toggle`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const idx = selectedSeats.findIndex(function(s) { return s.id === seatId; });
-
                 if (data.status === 'LOCKED_BY_ME') {
-                    if (idx === -1) {
-                        selectedSeats.push({ id: seatId, row: row, number: num });
-                        el.classList.add('seat-locked-me');
-                    }
-                } else if (data.status === 'AVAILABLE') {
-                    if (idx >= 0) {
-                        selectedSeats.splice(idx, 1);
-                        el.classList.remove('seat-locked-me');
-                    }
+                    el.classList.add('seat-locked-me');
+                } else {
+                    el.classList.remove('seat-locked-me');
                 }
-                updateSummary();
+                syncSelectionWithMap();
+            } else if (response.status === 409) {
+                // Someone else just locked it!
+                el.classList.add('seat-locked-other');
+                el.onclick = null; // Disable clicking
+                alert("This seat was just selected by another user.");
             } else {
                 const errorMsg = await response.text();
-                alert(errorMsg || "Could not select seat. It might have been locked by someone else.");
-                location.reload();
+                alert(errorMsg);
             }
         } catch (error) {
-            console.error("Lock error:", error);
-            alert("Connection error. Please try again.");
+            console.error('Error toggling seat:', error);
         }
     }
 
