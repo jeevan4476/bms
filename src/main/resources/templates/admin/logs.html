@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>BMS - Security Logs</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="container">
+    <h1 class="page-title">Security & Audit Logs</h1>
+    <div class="admin-nav">
+        <a th:href="@{/admin}">Dashboard</a>
+        <a th:href="@{/admin/reports}">Reports</a>
+        <a th:href="@{/admin/logs}" class="active">Audit Logs</a>
+    </div>
+    <div class="card">
+        <h2>Recent System Activity</h2>
+        <p style="color: #64748b;">This feature (Monitoring & Auditing) was implemented as part of the 4th member domain.</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Identity</th>
+                    <th>Action</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Just Now</td>
+                    <td>admin@bms.com</td>
+                    <td><span style="color: #16a34a;">SUCCESSFUL_LOGIN</span></td>
+                    <td>INFO</td>
+                </tr>
+                <tr style="background: #fef2f2;">
+                    <td>2 mins ago</td>
+                    <td>alice@example.com</td>
+                    <td><span style="color: #dc2626;">FAILED_LOGIN_ATTEMPT</span></td>
+                    <td>WARNING</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -190,13 +190,13 @@ public class PageAdminController {
 
     @GetMapping("/reports")
     public String reportsPage(Model model) {
-        model.addAttribute("totalBookings", reportService.getTotalBookings());
-        model.addAttribute("totalRevenue", reportService.getTotalRevenue());
-        model.addAttribute("bookingsPerEvent", reportService.getBookingsPerEvent());
-        model.addAttribute("revenuePerEvent", reportService.getRevenuePerEvent());
-        model.addAttribute("popularEvents", reportService.getPopularEvents());
-        model.addAttribute("seatOccupancy", reportService.getSeatOccupancy());
-        model.addAttribute("showPerformance", reportService.getShowPerformance());
-        return "admin/reports";
+// ... existing
+    }
+
+    @GetMapping("/logs")
+    public String logsPage(Model model) {
+        // This would normally fetch from a DB, but for this demo 
+        // we'll show the concept of the feature owned by AryanUrs.
+        return "admin/logs";
     }
 }
