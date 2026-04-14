@@ -38,6 +38,7 @@ public class BookingServiceImpl implements BookingService {
     private final ShowRepository showRepository;
     private final SeatRepository seatRepository;
     private final PaymentService paymentService;
+    private final SeatLockService seatLockService;
 
     public BookingServiceImpl(
             BookingRepository bookingRepository,
@@ -45,7 +46,8 @@ public class BookingServiceImpl implements BookingService {
             UserRepository userRepository,
             ShowRepository showRepository,
             SeatRepository seatRepository,
-            PaymentService paymentService) {
+            PaymentService paymentService,
+            SeatLockService seatLockService) {
 
         this.bookingRepository = bookingRepository;
         this.bookingSeatRepository = bookingSeatRepository;
@@ -53,6 +55,7 @@ public class BookingServiceImpl implements BookingService {
         this.showRepository = showRepository;
         this.seatRepository = seatRepository;
         this.paymentService = paymentService;
+        this.seatLockService = seatLockService;
     }
 
     @Override
@@ -63,6 +66,16 @@ public class BookingServiceImpl implements BookingService {
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + request.getUserId()));
+
+        // Verification of real-time locks (REDIS)
+        // If the user didn't lock the seats first (e.g. bypass UI), we check here.
+        for (Long seatId : request.getSeatIds()) {
+            String owner = seatLockService.getLockOwner(request.getShowId(), seatId);
+            if (owner != null && !owner.equals(user.getEmail())) {
+                throw new com.bms.exception.SeatAlreadyBookedException(
+                        "Seat " + seatId + " is currently selected by another user.");
+            }
+        }
 
         Show show = showRepository.findById(request.getShowId())
                 .orElseThrow(() -> new ResourceNotFoundException("Show not found with id " + request.getShowId()));
@@ -125,6 +138,9 @@ public class BookingServiceImpl implements BookingService {
 
         log.info("Booking created: id={}, status=PENDING, totalAmount={}, seats={}",
                 booking.getId(), totalAmount, seatIds.size());
+
+        // Release temporary Redis locks now that the booking is in the DB
+        seatLockService.releaseSeats(request.getShowId(), request.getSeatIds());
 
         return new BookingResponse(
                 booking.getId(),

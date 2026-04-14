@@ -340,10 +340,17 @@ tbody tr:hover {
     color: #2563eb;
 }
 
-.seat-selected {
+.seat-selected, .seat-locked-me {
     background: #2563eb;
     border-color: #2563eb;
     color: #fff;
+}
+
+.seat-locked-other {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 .seat-booked {
@@ -356,10 +363,11 @@ tbody tr:hover {
 .seat-legend {
     display: flex;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
     margin-top: 1.5rem;
     font-size: 0.8rem;
     color: #64748b;
+    flex-wrap: wrap;
 }
 
 .seat-legend-item {
@@ -378,6 +386,7 @@ tbody tr:hover {
 .seat-legend-box.available { background: #fff; }
 .seat-legend-box.selected { background: #2563eb; border-color: #2563eb; }
 .seat-legend-box.booked { background: #e2e8f0; border-color: #e2e8f0; }
+.seat-legend-box.locked-other { background: #f59e0b; border-color: #f59e0b; }
 
 /* ===== Booking Summary ===== */
 .booking-summary {

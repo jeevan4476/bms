@@ -50,12 +50,12 @@
                     <span class="seat-row-label" th:text="${entry.key}">A</span>
                     <div th:each="seat : ${entry.value}"
                          th:id="'seat-' + ${seat.id}"
-                         th:classappend="${seat.booked} ? 'seat-booked' : ''"
+                         th:classappend="${seat.status == 'BOOKED' ? 'seat-booked' : (seat.status == 'LOCKED_BY_ME' ? 'seat-locked-me' : (seat.status == 'LOCKED_BY_OTHER' ? 'seat-locked-other' : ''))}"
                          th:data-id="${seat.id}"
                          th:data-row="${seat.row}"
                          th:data-number="${seat.number}"
                          class="seat"
-                         th:onclick="${seat.booked} ? '' : 'toggleSeat(this)'"
+                         th:onclick="${seat.status == 'BOOKED' || seat.status == 'LOCKED_BY_OTHER'} ? '' : 'toggleSeat(this)'"
                          th:text="${seat.number}">1</div>
                 </div>
             </div>
@@ -67,6 +67,10 @@
                 <div class="seat-legend-item">
                     <div class="seat-legend-box selected"></div>
                     <span>Selected</span>
+                </div>
+                <div class="seat-legend-item">
+                    <div class="seat-legend-box locked-other"></div>
+                    <span>Locked by others</span>
                 </div>
                 <div class="seat-legend-item">
                     <div class="seat-legend-box booked"></div>
@@ -119,24 +123,64 @@
 
 <script th:inline="javascript">
     var pricePerSeat = [[${show.price}]];
+    var showId = [[${show.id}]];
     var isAuthenticated = [[${#authorization.expression('isAuthenticated()')}]];
     var selectedSeats = [];
 
-    function toggleSeat(el) {
+    // Pre-populate selectedSeats from server-side status (in case of page refresh)
+    document.querySelectorAll('.seat-locked-me').forEach(function(el) {
+        selectedSeats.push({
+            id: el.getAttribute('data-id'),
+            row: el.getAttribute('data-row'),
+            number: el.getAttribute('data-number')
+        });
+    });
+    updateSummary();
+
+    async function toggleSeat(el) {
+        if (!isAuthenticated) {
+            window.location.href = '/login';
+            return;
+        }
+
         var seatId = el.getAttribute('data-id');
         var row = el.getAttribute('data-row');
         var num = el.getAttribute('data-number');
-        var idx = selectedSeats.findIndex(function(s) { return s.id === seatId; });
 
-        if (idx >= 0) {
-            selectedSeats.splice(idx, 1);
-            el.classList.remove('seat-selected');
-        } else {
-            selectedSeats.push({ id: seatId, row: row, number: num });
-            el.classList.add('seat-selected');
+        try {
+            // Call API to toggle Redis lock
+            const response = await fetch(`/api/locks/shows/${showId}/seats/${seatId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const idx = selectedSeats.findIndex(function(s) { return s.id === seatId; });
+
+                if (data.status === 'LOCKED_BY_ME') {
+                    if (idx === -1) {
+                        selectedSeats.push({ id: seatId, row: row, number: num });
+                        el.classList.add('seat-locked-me');
+                    }
+                } else if (data.status === 'AVAILABLE') {
+                    if (idx >= 0) {
+                        selectedSeats.splice(idx, 1);
+                        el.classList.remove('seat-locked-me');
+                    }
+                }
+                updateSummary();
+            } else {
+                const errorMsg = await response.text();
+                alert(errorMsg || "Could not select seat. It might have been locked by someone else.");
+                location.reload();
+            }
+        } catch (error) {
+            console.error("Lock error:", error);
+            alert("Connection error. Please try again.");
         }
-
-        updateSummary();
     }
 
     function updateSummary() {

@@ -44,6 +44,7 @@ class BookingServiceImplTest {
     @Mock private ShowRepository showRepository;
     @Mock private SeatRepository seatRepository;
     @Mock private PaymentService paymentService;
+    @Mock private SeatLockService seatLockService;
 
     private BookingServiceImpl bookingService;
 
@@ -52,7 +53,8 @@ class BookingServiceImplTest {
         bookingService = new BookingServiceImpl(
                 bookingRepository, bookingSeatRepository,
                 userRepository, showRepository,
-                seatRepository, paymentService);
+                seatRepository, paymentService,
+                seatLockService);
     }
 
     @Test
@@ -69,6 +71,9 @@ class BookingServiceImplTest {
                 .thenReturn(new ArrayList<>());
         when(bookingSeatRepository.existsByShowIdAndSeatIdIn(1L, List.of(1L, 2L)))
                 .thenReturn(false);
+        
+        // Mock Redis lock check
+        when(seatLockService.getLockOwner(any(), any())).thenReturn(null);
 
         Booking savedBooking = new Booking();
         savedBooking.setStatus(BookingStatus.PENDING);
@@ -110,6 +115,7 @@ class BookingServiceImplTest {
                 .isInstanceOf(SeatAlreadyBookedException.class);
 
         verify(bookingRepository, never()).save(any());
+        verify(seatLockService, never()).releaseSeats(any(), any());
     }
 
     @Test

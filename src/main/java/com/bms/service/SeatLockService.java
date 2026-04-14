@@ -8,13 +8,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnBean(StringRedisTemplate.class)
 public class SeatLockService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
-    public SeatLockService(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    public SeatLockService(java.util.Optional<org.springframework.data.redis.core.StringRedisTemplate> redisTemplate) {
+        this.redisTemplate = redisTemplate.orElse(null);
     }
 
     private static final long LOCK_TTL = 300; // 5 minutes
@@ -24,7 +23,7 @@ public class SeatLockService {
     }
 
     public boolean lockSeat(Long showId, Long seatId, String userId) {
-
+        if (redisTemplate == null) return true; // Fallback: allow if Redis is missing
         String key = getKey(showId, seatId);
 
         Boolean success = redisTemplate.opsForValue().setIfAbsent(
@@ -38,17 +37,21 @@ public class SeatLockService {
     }
 
     public void releaseSeat(Long showId, Long seatId) {
-
+        if (redisTemplate == null) return;
         String key = getKey(showId, seatId);
         redisTemplate.delete(key);
     }
 
     public boolean isSeatLocked(Long showId, Long seatId) {
-
+        if (redisTemplate == null) return false;
         String key = getKey(showId, seatId);
-        Boolean exists = redisTemplate.hasKey(key);
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
 
-        return Boolean.TRUE.equals(exists);
+    public String getLockOwner(Long showId, Long seatId) {
+        if (redisTemplate == null) return null;
+        String key = getKey(showId, seatId);
+        return redisTemplate.opsForValue().get(key);
     }
 
     public boolean lockSeats(Long showId, List<Long> seatIds, String userId) {

@@ -35,24 +35,28 @@ public class PageShowController {
     private final BookingSeatRepository bookingSeatRepository;
     private final BookingService bookingService;
     private final UserRepository userRepository;
+    private final com.bms.service.SeatLockService seatLockService;
 
     public PageShowController(
             ShowService showService,
             SeatRepository seatRepository,
             BookingSeatRepository bookingSeatRepository,
             BookingService bookingService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            com.bms.service.SeatLockService seatLockService) {
         this.showService = showService;
         this.seatRepository = seatRepository;
         this.bookingSeatRepository = bookingSeatRepository;
         this.bookingService = bookingService;
         this.userRepository = userRepository;
+        this.seatLockService = seatLockService;
     }
 
     @GetMapping("/shows/{id}")
-    public String showDetail(@PathVariable Long id, Model model) {
+    public String showDetail(@PathVariable Long id, Model model, Authentication authentication) {
         Show show = showService.getShow(id);
         List<Seat> allSeats = seatRepository.findByVenueId(show.getVenue().getId());
+        String currentUserId = (authentication != null) ? authentication.getName() : null;
 
         // Find which seats are already booked for this show (read-only, no lock)
         Set<Long> bookedSeatIds = bookingSeatRepository
@@ -71,7 +75,25 @@ public class PageShowController {
             seatInfo.put("id", seat.getId());
             seatInfo.put("number", seat.getSeatNumber());
             seatInfo.put("row", row);
-            seatInfo.put("booked", bookedSeatIds.contains(seat.getId()));
+            
+            boolean booked = bookedSeatIds.contains(seat.getId());
+            seatInfo.put("booked", booked);
+
+            // Redis Lock Status
+            if (!booked) {
+                String lockOwner = seatLockService.getLockOwner(id, seat.getId());
+                if (lockOwner != null) {
+                    if (lockOwner.equals(currentUserId)) {
+                        seatInfo.put("status", "LOCKED_BY_ME");
+                    } else {
+                        seatInfo.put("status", "LOCKED_BY_OTHER");
+                    }
+                } else {
+                    seatInfo.put("status", "AVAILABLE");
+                }
+            } else {
+                seatInfo.put("status", "BOOKED");
+            }
 
             seatMap.get(row).add(seatInfo);
         }
