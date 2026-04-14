@@ -1,21 +1,20 @@
 package com.bms.service;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SeatLockService {
 
-    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
-    private final java.util.concurrent.ConcurrentHashMap<String, String> localLocks = new java.util.concurrent.ConcurrentHashMap<>();
+    @Autowired(required = false)
+    private StringRedisTemplate redisTemplate;
 
-    public SeatLockService(java.util.Optional<org.springframework.data.redis.core.StringRedisTemplate> redisTemplate) {
-        this.redisTemplate = redisTemplate.orElse(null);
-    }
+    private final ConcurrentHashMap<String, String> localLocks = new ConcurrentHashMap<>();
 
     private static final long LOCK_TTL = 300; // 5 minutes
 
