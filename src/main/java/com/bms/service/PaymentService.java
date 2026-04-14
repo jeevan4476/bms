@@ -21,10 +21,26 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ReceiptService receiptService;
 
-    public PaymentService(PaymentRepository paymentRepository, ApplicationEventPublisher eventPublisher) {
+    public PaymentService(PaymentRepository paymentRepository, 
+                          ApplicationEventPublisher eventPublisher,
+                          ReceiptService receiptService) {
         this.paymentRepository = paymentRepository;
         this.eventPublisher = eventPublisher;
+        this.receiptService = receiptService;
+    }
+
+    public java.util.List<com.bms.dto.TransactionHistoryDTO> getTransactionHistory(Long userId) {
+        log.info("Fetching transaction history for userId: {}", userId);
+        return paymentRepository.findByBookingUserId(userId).stream()
+                .map(p -> new com.bms.dto.TransactionHistoryDTO(
+                        p.getBooking().getId(),
+                        p.getBooking().getShow().getEvent().getTitle(),
+                        p.getAmount(),
+                        p.getStatus().name(),
+                        p.getPaymentTime()
+                )).collect(java.util.stream.Collectors.toList());
     }
 
     public Payment processPayment(Booking booking) {
