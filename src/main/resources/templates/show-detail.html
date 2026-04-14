@@ -4,241 +4,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BMS - Select Seats</title>
+    <title th:text="'BMS – ' + ${show.event.title}">BMS - Select Seats</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <nav th:replace="~{fragments/layout :: navbar}"></nav>
 
-<div class="container">
-    <!-- Show Info Header -->
-    <div class="detail-header">
-        <h1 th:text="${show.event.title}">Event Title</h1>
-        <div class="detail-info">
-            <div class="detail-info-item">
-                <span class="label">Venue</span>
-                <span class="value" th:text="${show.venue.name}">Venue Name</span>
-            </div>
-            <div class="detail-info-item">
-                <span class="label">Location</span>
-                <span class="value" th:text="${show.venue.location}">Location</span>
-            </div>
-            <div class="detail-info-item">
-                <span class="label">Date &amp; Time</span>
-                <span class="value" th:text="${#temporals.format(show.startTime, 'MMM dd, yyyy hh:mm a')}">Mar 15, 2026 07:00 PM</span>
-            </div>
-            <div class="detail-info-item">
-                <span class="label">Price per Seat</span>
-                <span class="value" th:text="'$' + ${#numbers.formatDecimal(show.price, 1, 2)}">$10.00</span>
+<div class="show-page-wrapper">
+
+    <!-- ════ LEFT SIDEBAR ════ -->
+    <aside class="show-sidebar">
+        <!-- Back link -->
+        <a th:href="@{/events/{id}(id=${show.event.id})}" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+            Back to Event
+        </a>
+
+        <!-- Event identity -->
+        <div class="sidebar-event">
+            <div class="sidebar-event-badge" th:text="${show.event.eventType}">SPORT</div>
+            <h2 th:text="${show.event.title}">Event Title</h2>
+            <p class="sidebar-venue" th:text="${show.venue.name}">Venue</p>
+            <p class="sidebar-time" th:text="${#temporals.format(show.startTime, 'EEE, MMM dd • hh:mm a')}">Time</p>
+        </div>
+
+        <!-- Price categories (driven by sections) -->
+        <div class="price-legend">
+            <h4>Categories</h4>
+            <div th:each="section : ${sections}"
+                 class="price-cat"
+                 th:classappend="${section == activeSection} ? ' active' : ''"
+                 th:hx-get="@{/shows/{id}(id=${show.id},section=${section})}"
+                 hx-target="#seat-zone"
+                 hx-swap="innerHTML"
+                 th:onclick="${layoutType == 'STADIUM'} ? 'highlightStand(this, \'' + ${section} + '\')' : ''">
+                <span class="price-cat-dot"
+                      th:classappend="${section == 'FLOOR' or section == 'East Stand' or section == 'Club Lounge' or section == 'Front Row'} ? ' vip' : (${section == 'CIRCLE' or section == 'North Stand' or section == 'West Stand' or section == 'Balcony'} ? ' premium' : '')"></span>
+                <span th:text="${section}">Section</span>
             </div>
         </div>
-    </div>
 
-    <!-- Flash messages -->
-    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
-    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <!-- Flash messages -->
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 
-    <div class="two-col">
-        <!-- Seat Map -->
-        <div class="seat-map-container">
-            <h3 style="margin-bottom: 1.5rem; text-align: center; color: #1e293b;">Select Your Seats</h3>
-            <div class="screen"></div>
-            <div style="margin-top: 2.5rem;">
-                <div id="seat-map-container" 
-                     th:hx-get="@{/shows/{id}(id=${show.id})}" 
-                     hx-trigger="every 5s" 
-                     hx-swap="innerHTML"
-                     hx-on::after-swap="syncSelectionWithMap()">
-                    
-                    <div th:fragment="seatMapFragment" class="seat-grid">
-                        <div th:each="entry : ${seatMap}" class="seat-row">
-                            <span class="seat-row-label" th:text="${entry.key}">A</span>
-                            <div th:each="seat : ${entry.value}"
-                                 th:id="'seat-' + ${seat.id}"
-                                 th:classappend="${seat.status == 'BOOKED' ? 'seat-booked' : (seat.status == 'LOCKED_BY_ME' ? 'seat-locked-me' : (seat.status == 'LOCKED_BY_OTHER' ? 'seat-locked-other' : ''))}"
-                                 th:data-id="${seat.id}"
-                                 th:data-row="${seat.row}"
-                                 th:data-number="${seat.number}"
-                                 class="seat"
-                                 th:onclick="${seat.status == 'BOOKED' || seat.status == 'LOCKED_BY_OTHER'} ? '' : 'toggleSeat(this)'"
-                                 th:text="${seat.number}">1</div>
-                        </div>
+        <!-- Booking summary -->
+        <div class="sidebar-summary">
+            <h4>Your Selection</h4>
+            <div class="summary-line"><span>Seats</span><span id="sel-count">0</span></div>
+            <div class="summary-line total"><span>Total</span><span id="sel-total">$0.00</span></div>
+            <div id="sel-seats-list" class="sel-tags"></div>
+        </div>
+
+        <!-- Book button -->
+        <form th:action="@{/shows/{id}/book(id=${show.id})}" method="post">
+            <input type="hidden" id="selected-seat-inputs" name="_dummy">
+            <div id="seat-hidden-inputs"></div>
+            <button type="submit" id="book-btn" class="btn-book" disabled>
+                Book Now
+            </button>
+            <p id="login-prompt" style="display:none; text-align:center; font-size:.85rem; margin-top:.5rem;">
+                <a th:href="@{/login}">Log in</a> to book seats.
+            </p>
+        </form>
+    </aside>
+
+    <!-- ════ MAIN CONTENT ════ -->
+    <main class="show-main">
+
+        <!-- ── STADIUM LAYOUT ── -->
+        <div th:if="${layoutType == 'STADIUM'}" class="venue-visual stadium-visual">
+            <p class="venue-visual-hint">Click a stand to see available seats</p>
+            <svg viewBox="0 0 600 420" class="stadium-svg" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer oval -->
+                <ellipse cx="300" cy="210" rx="280" ry="195" fill="#e8edf2" stroke="#c1cad6" stroke-width="2"/>
+                <!-- Inner oval (pitch background) -->
+                <ellipse cx="300" cy="210" rx="175" ry="125" fill="#4caf50"/>
+                <!-- Pitch markings -->
+                <ellipse cx="300" cy="210" rx="160" ry="110" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+                <line x1="300" y1="100" x2="300" y2="320" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+                <circle cx="300" cy="210" r="30" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+                <rect x="230" y="170" width="70" height="18" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+                <rect x="300" y="170" width="70" height="18" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+
+                <!-- NORTH STAND (top) -->
+                <path d="M 120,38 Q 300,5 480,38 Q 300,70 120,38 Z"
+                      class="stand-section" data-section="North Stand"
+                      th:classappend="${activeSection == 'North Stand'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'North Stand')"/>
+                <text x="300" y="45" text-anchor="middle" class="stand-label">NORTH STAND</text>
+
+                <!-- SOUTH STAND (bottom) -->
+                <path d="M 120,382 Q 300,415 480,382 Q 300,350 120,382 Z"
+                      class="stand-section" data-section="South Stand"
+                      th:classappend="${activeSection == 'South Stand'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'South Stand')"/>
+                <text x="300" y="407" text-anchor="middle" class="stand-label">SOUTH STAND</text>
+
+                <!-- EAST STAND (right) -->
+                <path d="M 543,70 Q 590,210 543,350 Q 510,210 543,70 Z"
+                      class="stand-section" data-section="East Stand"
+                      th:classappend="${activeSection == 'East Stand'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'East Stand')"/>
+                <text x="572" y="214" text-anchor="middle" class="stand-label" transform="rotate(90 572 214)">EAST STAND</text>
+
+                <!-- WEST STAND (left) -->
+                <path d="M 57,70 Q 10,210 57,350 Q 90,210 57,70 Z"
+                      class="stand-section" data-section="West Stand"
+                      th:classappend="${activeSection == 'West Stand'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'West Stand')"/>
+                <text x="28" y="214" text-anchor="middle" class="stand-label" transform="rotate(-90 28 214)">WEST STAND</text>
+
+                <!-- AWAY END (bottom-right corner) -->
+                <path d="M 480,370 Q 540,350 555,300 Q 520,340 480,370 Z"
+                      class="stand-section" data-section="Away End"
+                      th:classappend="${activeSection == 'Away End'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'Away End')"/>
+                <text x="527" y="355" text-anchor="middle" font-size="7" class="stand-label">AWAY</text>
+
+                <!-- CLUB LOUNGE (top-right corner) -->
+                <path d="M 480,50 Q 540,70 555,120 Q 520,80 480,50 Z"
+                      class="stand-section" data-section="Club Lounge"
+                      th:classappend="${activeSection == 'Club Lounge'} ? ' stand-active' : ''"
+                      onclick="selectStand(this, 'Club Lounge')"/>
+                <text x="527" y="80" text-anchor="middle" font-size="7" class="stand-label">VIP</text>
+            </svg>
+        </div>
+
+        <!-- ── CONCERT LAYOUT ── -->
+        <div th:if="${layoutType == 'CONCERT_ARENA'}" class="venue-visual concert-visual">
+            <p class="venue-visual-hint">Select a zone from the sidebar</p>
+            <div class="concert-diagram">
+                <div class="concert-stage">
+                    <span>STAGE</span>
+                </div>
+                <div class="concert-zone"
+                     th:each="section : ${sections}"
+                     th:classappend="'zone-' + ${sectionsStat.index}"
+                     th:text="${section}">FLOOR</div>
+            </div>
+        </div>
+
+        <!-- ── THEATRE LAYOUT ── -->
+        <div th:if="${layoutType == 'THEATRE'}" class="venue-visual theatre-visual">
+            <div class="theatre-screen">SCREEN</div>
+        </div>
+
+        <!-- ── SEAT GRID (shared, HTMX target) ── -->
+        <div class="seat-area">
+            <div id="seat-zone"
+                 th:hx-get="@{/shows/{id}(id=${show.id},section=${activeSection})}"
+                 hx-trigger="every 8s"
+                 hx-swap="innerHTML"
+                 hx-on::after-swap="syncSelectionState()">
+                <div th:fragment="seatMapFragment">
+                    <!-- Section header -->
+                    <div class="seat-section-header" th:if="${activeSection != null}">
+                        <span th:text="${activeSection}">Section</span>
+                    </div>
+
+                    <!-- Row-by-row grid -->
+                    <div th:each="entry : ${seatMap}"
+                         class="seat-row"
+                         th:classappend="${layoutType == 'CONCERT_ARENA'} ? ' concert-row' : (${layoutType == 'THEATRE'} ? ' theatre-row' : '')">
+                        <span class="seat-row-label" th:text="${entry.key}">A</span>
+                        <div th:each="seat : ${entry.value}"
+                             th:id="'seat-' + ${seat.id}"
+                             class="seat"
+                             th:classappend="${seat.status == 'BOOKED'} ? 'seat-booked' :
+                                            (${seat.status == 'LOCKED_BY_ME'} ? 'seat-locked-me' :
+                                            (${seat.status == 'LOCKED_BY_OTHER'} ? 'seat-locked-other' :
+                                            (${seat.seatType == 'VIP'} ? 'seat-vip' :
+                                            (${seat.seatType == 'PREMIUM'} ? 'seat-premium' : ''))))"
+                             th:data-id="${seat.id}"
+                             th:data-row="${seat.row}"
+                             th:data-number="${seat.number}"
+                             th:data-section="${seat.section}"
+                             th:onclick="${seat.status == 'BOOKED' or seat.status == 'LOCKED_BY_OTHER'} ? '' : 'toggleSeat(this)'"
+                             th:text="${seat.number}">1</div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="seat-legend">
+                        <div class="seat-legend-item"><div class="seat-legend-box available"></div><span>Available</span></div>
+                        <div class="seat-legend-item"><div class="seat-legend-box selected"></div><span>Selected</span></div>
+                        <div class="seat-legend-item"><div class="seat-legend-box vip-box"></div><span>VIP</span></div>
+                        <div class="seat-legend-item"><div class="seat-legend-box premium-box"></div><span>Premium</span></div>
+                        <div class="seat-legend-item"><div class="seat-legend-box locked-other"></div><span>Taken</span></div>
+                        <div class="seat-legend-item"><div class="seat-legend-box booked"></div><span>Booked</span></div>
                     </div>
                 </div>
             </div>
-            <div class="seat-legend">
-                <div class="seat-legend-item">
-                    <div class="seat-legend-box available"></div>
-                    <span>Available</span>
-                </div>
-                <div class="seat-legend-item">
-                    <div class="seat-legend-box selected"></div>
-                    <span>Selected</span>
-                </div>
-                <div class="seat-legend-item">
-                    <div class="seat-legend-box locked-other"></div>
-                    <span>Locked by others</span>
-                </div>
-                <div class="seat-legend-item">
-                    <div class="seat-legend-box booked"></div>
-                    <span>Booked</span>
-                </div>
-            </div>
         </div>
-
-        <!-- Booking Summary Sidebar -->
-        <div class="booking-summary">
-            <h3>Booking Summary</h3>
-            <div class="summary-row">
-                <span class="label">Event</span>
-                <span class="value" th:text="${show.event.title}">Event</span>
-            </div>
-            <div class="summary-row">
-                <span class="label">Show Time</span>
-                <span class="value" th:text="${#temporals.format(show.startTime, 'MMM dd, hh:mm a')}">Time</span>
-            </div>
-            <div class="summary-row">
-                <span class="label">Seats Selected</span>
-                <span class="value" id="selected-count">0</span>
-            </div>
-            <div class="summary-row">
-                <span class="label">Selected Seats</span>
-                <span class="value" id="selected-seats-display">None</span>
-            </div>
-            <div class="summary-total">
-                <span>Total</span>
-                <span id="total-price">$0.00</span>
-            </div>
-
-            <form th:action="@{/shows/{id}/book(id=${show.id})}" method="post" id="booking-form"
-                  style="margin-top: 1.5rem;">
-                <div id="seat-inputs"></div>
-                <button type="submit" class="btn btn-primary" id="book-btn" disabled>
-                    Book Now
-                </button>
-                <p id="login-prompt" style="display: none; margin-top: 0.75rem; text-align: center; font-size: 0.85rem; color: #64748b;">
-                    <a th:href="@{/login}">Log in</a> to book seats.
-                </p>
-            </form>
-        </div>
-    </div>
-
-    <div style="margin-top: 1.5rem;">
-        <a th:href="@{/events/{id}(id=${show.event.id})}" class="btn btn-outline btn-sm">Back to Event</a>
-    </div>
+    </main>
 </div>
 
 <script th:inline="javascript">
     var pricePerSeat = [[${show.price}]];
-    var showId = [[${show.id}]];
-    var isAuthenticated = [[${#authorization.expression('isAuthenticated()')}]];
+    var showId       = [[${show.id}]];
+    var isAuth       = [[${#authorization.expression('isAuthenticated()')}]];
     var selectedSeats = [];
 
-    // Pre-populate selectedSeats from server-side status (in case of page refresh)
+    // ── Init: pick up server-side LOCKED_BY_ME seats on load ──
     document.querySelectorAll('.seat-locked-me').forEach(function(el) {
-        selectedSeats.push({
-            id: el.getAttribute('data-id'),
-            row: el.getAttribute('data-row'),
-            number: el.getAttribute('data-number')
-        });
+        selectedSeats.push({ id: el.getAttribute('data-id'), row: el.getAttribute('data-row'), number: el.getAttribute('data-number') });
     });
     updateSummary();
 
-    // Keep selectedSeats in sync with what's manually selected in the UI
-    function syncSelectionWithMap() {
-        // Clear current array and rebuild from seats that have 'seat-locked-me' class
-        // This ensures the summary sidebar reflects the server state after every poll.
-        var newSelection = [];
-        document.querySelectorAll('.seat-locked-me').forEach(function(el) {
-            newSelection.push({
-                id: el.getAttribute('data-id'),
-                row: el.getAttribute('data-row'),
-                number: el.getAttribute('data-number')
-            });
+    // Called by HTMX after polling swap – re-paint locally-selected seats
+    function syncSelectionState() {
+        selectedSeats.forEach(function(s) {
+            var el = document.getElementById('seat-' + s.id);
+            if (el && !el.classList.contains('seat-booked') && !el.classList.contains('seat-locked-other')) {
+                el.classList.add('seat-locked-me');
+            }
         });
-        selectedSeats = newSelection;
         updateSummary();
     }
 
+    // ── Seat click ──
     async function toggleSeat(el) {
-        if (!isAuthenticated) {
-            window.location.href = '/login';
-            return;
-        }
-
+        if (!isAuth) { window.location.href = '/login'; return; }
         var seatId = el.getAttribute('data-id');
-        var row = el.getAttribute('data-row');
-        var num = el.getAttribute('data-number');
+        var row    = el.getAttribute('data-row');
+        var num    = el.getAttribute('data-number');
 
         try {
-            const response = await fetch(`/api/locks/shows/${showId}/seats/${seatId}/toggle`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+            const res = await fetch(`/api/locks/shows/${showId}/seats/${seatId}/toggle`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }
             });
-
-            if (response.ok) {
-                const data = await response.json();
+            if (res.ok) {
+                const data = await res.json();
                 if (data.status === 'LOCKED_BY_ME') {
                     el.classList.add('seat-locked-me');
+                    selectedSeats.push({ id: seatId, row, number: num });
                 } else {
                     el.classList.remove('seat-locked-me');
+                    selectedSeats = selectedSeats.filter(s => s.id !== seatId);
                 }
-                syncSelectionWithMap();
-            } else if (response.status === 409) {
-                // Someone else just locked it!
+                updateSummary();
+            } else if (res.status === 409) {
                 el.classList.add('seat-locked-other');
-                el.onclick = null; // Disable clicking
-                alert("This seat was just selected by another user.");
-            } else {
-                const errorMsg = await response.text();
-                alert(errorMsg);
+                el.onclick = null;
+                showToast('This seat was just selected by someone else!');
             }
-        } catch (error) {
-            console.error('Error toggling seat:', error);
-        }
+        } catch (e) { console.error(e); }
     }
 
-    function updateSummary() {
-        document.getElementById('selected-count').textContent = selectedSeats.length;
-
-        if (selectedSeats.length === 0) {
-            document.getElementById('selected-seats-display').textContent = 'None';
-        } else {
-            var labels = selectedSeats.map(function(s) { return s.row + s.number; });
-            document.getElementById('selected-seats-display').textContent = labels.join(', ');
-        }
-
-        var total = selectedSeats.length * pricePerSeat;
-        document.getElementById('total-price').textContent = '$' + total.toFixed(2);
-
-        // Update hidden inputs
-        var container = document.getElementById('seat-inputs');
-        container.innerHTML = '';
-        selectedSeats.forEach(function(s) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'seatIds';
-            input.value = s.id;
-            container.appendChild(input);
+    // ── Stadium: click SVG stand ──
+    function selectStand(svgEl, sectionName) {
+        document.querySelectorAll('.stand-section').forEach(s => s.classList.remove('stand-active'));
+        svgEl.classList.add('stand-active');
+        // Also trigger sidebar highlight
+        document.querySelectorAll('.price-cat').forEach(function(c) {
+            c.classList.toggle('active', c.textContent.trim() === sectionName);
         });
+    }
+
+    // ── Summary ──
+    function updateSummary() {
+        var count = selectedSeats.length;
+        document.getElementById('sel-count').textContent = count;
+        document.getElementById('sel-total').textContent = '$' + (count * pricePerSeat).toFixed(2);
+
+        var tagsEl = document.getElementById('sel-seats-list');
+        tagsEl.innerHTML = selectedSeats.map(function(s) {
+            return '<span class="sel-tag">' + s.row + s.number + '</span>';
+        }).join('');
 
         var btn = document.getElementById('book-btn');
-        var prompt = document.getElementById('login-prompt');
+        var lp  = document.getElementById('login-prompt');
+        if (!isAuth) { btn.style.display = 'none'; lp.style.display = 'block'; }
+        else { btn.disabled = count === 0; }
 
-        if (selectedSeats.length > 0 && isAuthenticated) {
-            btn.disabled = false;
-            prompt.style.display = 'none';
-        } else if (selectedSeats.length > 0 && !isAuthenticated) {
-            btn.disabled = true;
-            prompt.style.display = 'block';
-        } else {
-            btn.disabled = true;
-            prompt.style.display = 'none';
-        }
+        // Sync hidden inputs
+        var container = document.getElementById('seat-hidden-inputs');
+        container.innerHTML = selectedSeats.map(function(s) {
+            return '<input type="hidden" name="seatIds" value="' + s.id + '">';
+        }).join('');
+    }
+
+    // ── Toast notification ──
+    function showToast(msg) {
+        var t = document.createElement('div');
+        t.className = 'toast-msg'; t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.add('visible'); }, 10);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function(){ t.remove(); }, 400); }, 3000);
     }
 </script>
-
 </body>
 </html>

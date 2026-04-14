@@ -13,6 +13,7 @@ import com.bms.dto.BookingResponse;
 import com.bms.dto.EventRequest;
 import com.bms.dto.ShowRequest;
 import com.bms.dto.VenueRequest;
+import com.bms.dto.VenueRequest.SectionRequest;
 import com.bms.entity.Booking;
 import com.bms.entity.Event;
 import com.bms.entity.Show;
@@ -20,7 +21,9 @@ import com.bms.entity.User;
 import com.bms.entity.Venue;
 import com.bms.entity_enums.BookingStatus;
 import com.bms.entity_enums.EventType;
+import com.bms.entity_enums.SeatType;
 import com.bms.entity_enums.UserRole;
+import com.bms.entity_enums.VenueLayoutType;
 import com.bms.repository.BookingRepository;
 import com.bms.repository.SeatRepository;
 import com.bms.service.AuthService;
@@ -69,7 +72,6 @@ public class DataSeeder implements CommandLineRunner {
         admin.setPassword("admin123");
         admin.setRole(UserRole.ADMIN);
         admin = authService.register(admin);
-        log.info("Seeded admin: id={}, email={}", admin.getId(), admin.getEmail());
 
         User alice = new User();
         alice.setName("Alice Johnson");
@@ -77,7 +79,6 @@ public class DataSeeder implements CommandLineRunner {
         alice.setPassword("password");
         alice.setRole(UserRole.USER);
         alice = authService.register(alice);
-        log.info("Seeded user: id={}, email={}", alice.getId(), alice.getEmail());
 
         User bob = new User();
         bob.setName("Bob Smith");
@@ -85,7 +86,6 @@ public class DataSeeder implements CommandLineRunner {
         bob.setPassword("password");
         bob.setRole(UserRole.USER);
         bob = authService.register(bob);
-        log.info("Seeded user: id={}, email={}", bob.getId(), bob.getEmail());
 
         User clark = new User();
         clark.setName("Clark Kent");
@@ -93,7 +93,6 @@ public class DataSeeder implements CommandLineRunner {
         clark.setPassword("clark123");
         clark.setRole(UserRole.ORGANIZER);
         clark = authService.register(clark);
-        log.info("Seeded organizer: id={}, email={}", clark.getId(), clark.getEmail());
 
         // --- Events ---
         EventRequest movieReq = new EventRequest();
@@ -123,19 +122,45 @@ public class DataSeeder implements CommandLineRunner {
         Event sport = eventService.createEvent(sportReq);
 
         // --- Venues ---
+
+        // Theatre (IMAX Cinema Hall) - curved rows for movies
         VenueRequest cinemaReq = new VenueRequest();
         cinemaReq.setName("IMAX Cinema Hall");
         cinemaReq.setLocation("Downtown Mall, 5th Avenue");
-        cinemaReq.setRows(5);
-        cinemaReq.setSeatsPerRow(8);
+        cinemaReq.setLayoutType(VenueLayoutType.THEATRE);
+        cinemaReq.setSections(List.of(
+            section("Balcony",   2, 8, SeatType.PREMIUM),
+            section("Middle",    3, 10, SeatType.REGULAR),
+            section("Front Row", 2, 8, SeatType.VIP)
+        ));
         Venue cinema = venueService.createVenue(cinemaReq);
 
-        VenueRequest arenaReq = new VenueRequest();
-        arenaReq.setName("City Arena");
-        arenaReq.setLocation("Olympic Park, North Road");
-        arenaReq.setRows(8);
-        arenaReq.setSeatsPerRow(10);
-        Venue arena = venueService.createVenue(arenaReq);
+        // Concert Arena - radial/semi-circle layout
+        VenueRequest concertArenaReq = new VenueRequest();
+        concertArenaReq.setName("City Music Arena");
+        concertArenaReq.setLocation("Olympic Park, North Road");
+        concertArenaReq.setLayoutType(VenueLayoutType.CONCERT_ARENA);
+        concertArenaReq.setSections(List.of(
+            section("FLOOR",      3, 12, SeatType.VIP),
+            section("CIRCLE",     4, 14, SeatType.PREMIUM),
+            section("UPPER TIER", 3, 16, SeatType.REGULAR)
+        ));
+        Venue concertArena = venueService.createVenue(concertArenaReq);
+
+        // Stadium - oval with named stands
+        VenueRequest stadiumReq = new VenueRequest();
+        stadiumReq.setName("Emirates Stadium");
+        stadiumReq.setLocation("Highbury House, London");
+        stadiumReq.setLayoutType(VenueLayoutType.STADIUM);
+        stadiumReq.setSections(List.of(
+            section("North Stand",     4, 12, SeatType.PREMIUM),
+            section("South Stand",     4, 12, SeatType.REGULAR),
+            section("East Stand",      3, 10, SeatType.VIP),
+            section("West Stand",      3, 10, SeatType.PREMIUM),
+            section("Away End",        2, 10, SeatType.REGULAR),
+            section("Club Lounge",     2, 8,  SeatType.VIP)
+        ));
+        Venue stadium = venueService.createVenue(stadiumReq);
 
         // --- Shows ---
         LocalDateTime tomorrow = LocalDateTime.now().plusDays(1).withHour(14).withMinute(0).withSecond(0).withNano(0);
@@ -154,11 +179,11 @@ public class DataSeeder implements CommandLineRunner {
         movieShow2Req.setStartTime(tomorrow.plusHours(4));
         movieShow2Req.setEndTime(tomorrow.plusHours(4).plusMinutes(148));
         movieShow2Req.setPrice(15.00);
-        Show movieShow2 = showService.createShow(movieShow2Req);
+        showService.createShow(movieShow2Req);
 
         ShowRequest concertShowReq = new ShowRequest();
         concertShowReq.setEventId(concert.getId());
-        concertShowReq.setVenueId(arena.getId());
+        concertShowReq.setVenueId(concertArena.getId());
         concertShowReq.setStartTime(tomorrow.plusDays(2).withHour(19));
         concertShowReq.setEndTime(tomorrow.plusDays(2).withHour(22));
         concertShowReq.setPrice(85.00);
@@ -166,17 +191,16 @@ public class DataSeeder implements CommandLineRunner {
 
         ShowRequest sportShowReq = new ShowRequest();
         sportShowReq.setEventId(sport.getId());
-        sportShowReq.setVenueId(arena.getId());
+        sportShowReq.setVenueId(stadium.getId());
         sportShowReq.setStartTime(tomorrow.plusDays(5).withHour(15));
         sportShowReq.setEndTime(tomorrow.plusDays(5).withHour(17));
         sportShowReq.setPrice(45.00);
         Show sportShow = showService.createShow(sportShowReq);
 
         // --- Bookings ---
-        // Get seat IDs from the cinema (for movie shows)
         var cinemaSeats = seatRepository.findByVenueId(cinema.getId());
-        // Get seat IDs from the arena (for concert/sport shows)
-        var arenaSeats = seatRepository.findByVenueId(arena.getId());
+        var arenaSeats  = seatRepository.findByVenueId(concertArena.getId());
+        var stadiumSeats = seatRepository.findByVenueId(stadium.getId());
 
         // Alice books 2 seats for the movie
         BookingRequest aliceMovieBooking = new BookingRequest();
@@ -184,7 +208,6 @@ public class DataSeeder implements CommandLineRunner {
         aliceMovieBooking.setShowId(movieShow1.getId());
         aliceMovieBooking.setSeatIds(List.of(cinemaSeats.get(0).getId(), cinemaSeats.get(1).getId()));
         BookingResponse aliceBooking = bookingService.createBooking(aliceMovieBooking);
-        // Manually confirm this booking (skip payment simulation to avoid 2s delay in seeder)
         Booking aliceBookingEntity = bookingRepository.findById(aliceBooking.getBookingId()).orElseThrow();
         aliceBookingEntity.setStatus(BookingStatus.CONFIRMED);
         bookingRepository.save(aliceBookingEntity);
@@ -201,11 +224,11 @@ public class DataSeeder implements CommandLineRunner {
         bookingRepository.save(bobBookingEntity);
         log.info("Seeded CONFIRMED booking: id={}, user=bob, show=concert", bobBooking.getBookingId());
 
-        // Alice also books 1 seat for the sport event (left as PENDING)
+        // Alice books 1 seat for the sport event (left as PENDING)
         BookingRequest aliceSportBooking = new BookingRequest();
         aliceSportBooking.setUserId(alice.getId());
         aliceSportBooking.setShowId(sportShow.getId());
-        aliceSportBooking.setSeatIds(List.of(arenaSeats.get(10).getId()));
+        aliceSportBooking.setSeatIds(List.of(stadiumSeats.get(10).getId()));
         BookingResponse aliceSportResp = bookingService.createBooking(aliceSportBooking);
         log.info("Seeded PENDING booking: id={}, user=alice, show=sport", aliceSportResp.getBookingId());
 
@@ -215,5 +238,14 @@ public class DataSeeder implements CommandLineRunner {
         log.info("  Org:   clark@bms.com / clark123");
         log.info("  User:  alice@example.com / password");
         log.info("  User:  bob@example.com / password");
+    }
+
+    private SectionRequest section(String name, int rows, int seatsPerRow, SeatType type) {
+        SectionRequest s = new SectionRequest();
+        s.setName(name);
+        s.setRows(rows);
+        s.setSeatsPerRow(seatsPerRow);
+        s.setSeatType(type);
+        return s;
     }
 }

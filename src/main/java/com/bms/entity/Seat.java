@@ -26,6 +26,8 @@ public class Seat extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SeatType seatType;
 
+    private String sectionName; // e.g., "North Stand", "FLOOR", "Balcony"
+
     @ManyToOne
     private Venue venue;
 }
