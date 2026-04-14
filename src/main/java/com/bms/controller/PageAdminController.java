@@ -190,7 +190,14 @@ public class PageAdminController {
 
     @GetMapping("/reports")
     public String reportsPage(Model model) {
-// ... existing
+        model.addAttribute("totalBookings", reportService.getTotalBookings());
+        model.addAttribute("totalRevenue", reportService.getTotalRevenue());
+        model.addAttribute("bookingsPerEvent", reportService.getBookingsPerEvent());
+        model.addAttribute("revenuePerEvent", reportService.getRevenuePerEvent());
+        model.addAttribute("popularEvents", reportService.getPopularEvents());
+        model.addAttribute("seatOccupancy", reportService.getSeatOccupancy());
+        model.addAttribute("showPerformance", reportService.getShowPerformance());
+        return "admin/reports";
     }
 
     @GetMapping("/logs")

@@ -28,11 +28,14 @@ class PaymentServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private ReceiptService receiptService;
+
     private PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository, eventPublisher);
+        paymentService = new PaymentService(paymentRepository, eventPublisher, receiptService);
     }
 
     @Test

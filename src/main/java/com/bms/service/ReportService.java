@@ -98,7 +98,29 @@ public class ReportService {
 
     /** Seat occupancy per show */
     public List<SeatOccupancyReport> getSeatOccupancy() {
-// ... existing code
+        log.info("Fetching seat occupancy report");
+        List<Show> shows = showRepository.findAllWithEventAndVenue();
+        List<SeatOccupancyReport> reports = new ArrayList<>();
+
+        for (Show show : shows) {
+            long totalSeats = seatRepository.countByVenueId(show.getVenue().getId());
+            long bookedSeats = bookingSeatRepository.countByShowId(show.getId());
+
+            double occupancy = totalSeats > 0
+                    ? Math.round((double) bookedSeats / totalSeats * 10000.0) / 100.0
+                    : 0.0;
+
+            reports.add(new SeatOccupancyReport(
+                    show.getId(),
+                    show.getEvent().getTitle(),
+                    show.getVenue().getName(),
+                    totalSeats,
+                    bookedSeats,
+                    occupancy
+            ));
+        }
+
+        return reports;
     }
 
     /** Detailed performance per show (Revenue + Efficiency) */
