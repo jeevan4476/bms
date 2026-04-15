@@ -113,10 +113,10 @@
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    var PRICE_PER_SEAT = [[${show.price}]];
-    var SHOW_ID        = [[${show.id}]];
-    var IS_AUTH        = [[${#authorization.expression('isAuthenticated()')}]];
-    var currentSection = [[${activeSection}]];
+    var PRICE_PER_SEAT = /*[[${show.price}]]*/ 0;
+    var SHOW_ID        = /*[[${show.id}]]*/ 0;
+    var IS_AUTH        = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+    var currentSection = /*[[${activeSection}]]*/ null;
     var selectedSeats  = [];
 
     // ── Global click listener ──
