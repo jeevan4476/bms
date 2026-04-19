@@ -42,7 +42,7 @@
                     <td th:text="${booking.show.event.title}">Event Name</td>
                     <td th:text="${#temporals.format(booking.show.startTime, 'MMM dd, yyyy hh:mm a')}">Mar 15</td>
                     <td th:text="${booking.show.venue.name}">Venue</td>
-                    <td th:text="'$' + ${#numbers.formatDecimal(booking.totalAmount, 1, 2)}">$20.00</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(booking.totalAmount, 1, 2)}">₹20.00</td>
                     <td>
                         <span class="badge"
                               th:classappend="${booking.status.name() == 'CONFIRMED' ? 'badge-confirmed' : (booking.status.name() == 'PENDING' ? 'badge-pending' : 'badge-cancelled')}"
@@ -80,7 +80,7 @@
                     <tr th:each="tx : ${transactions}">
                         <td th:text="'#' + ${tx.bookingId}">#1</td>
                         <td th:text="${tx.eventTitle}">Event</td>
-                        <td th:text="'$' + ${#numbers.formatDecimal(tx.amount, 1, 2)}">$20.00</td>
+                        <td th:text="'₹' + ${#numbers.formatDecimal(tx.amount, 1, 2)}">₹20.00</td>
                         <td>
                             <span class="badge"
                                   th:classappend="${tx.status == 'SUCCESS' ? 'badge-confirmed' : 'badge-cancelled'}"

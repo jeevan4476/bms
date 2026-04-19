@@ -42,7 +42,7 @@
         <div class="sidebar-summary">
             <h4>Your Selection</h4>
             <div class="summary-line"><span>Seats</span><span id="sel-count">0</span></div>
-            <div class="summary-line total"><span>Total</span><span id="sel-total">$0.00</span></div>
+            <div class="summary-line total"><span>Total</span><span id="sel-total">₹0.00</span></div>
             <div id="sel-seats-list" class="sel-tags"></div>
         </div>
 
@@ -217,7 +217,7 @@
     function updateSummary() {
         var count = selectedSeats.length;
         document.getElementById('sel-count').textContent = count;
-        document.getElementById('sel-total').textContent = '$' + (count * PRICE_PER_SEAT).toFixed(2);
+        document.getElementById('sel-total').textContent = '₹' + (count * PRICE_PER_SEAT).toFixed(2);
         document.getElementById('sel-seats-list').innerHTML = selectedSeats.map(function(s){ return '<span class="sel-tag">'+(s.row||'')+s.number+'</span>'; }).join('');
         var btn = document.getElementById('book-btn');
         if (!IS_AUTH) { btn.style.display = 'none'; document.getElementById('login-prompt').style.display='block'; }

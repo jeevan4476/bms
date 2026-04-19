@@ -99,7 +99,7 @@
                     <td th:text="${show.venue.name}">Venue</td>
                     <td th:text="${#temporals.format(show.startTime, 'MMM dd, yyyy hh:mm a')}">Mar 15</td>
                     <td th:text="${#temporals.format(show.endTime, 'MMM dd, yyyy hh:mm a')}">Mar 15</td>
-                    <td th:text="'$' + ${#numbers.formatDecimal(show.price, 1, 2)}">$10.00</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(show.price, 1, 2)}">₹10.00</td>
                 </tr>
             </tbody>
         </table>

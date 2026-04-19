@@ -103,6 +103,22 @@ public class DataSeeder implements CommandLineRunner {
         movieReq.setImageUrl("https://picsum.photos/seed/inception/400/250");
         Event movie = eventService.createEvent(movieReq);
 
+        EventRequest movie2Req = new EventRequest();
+        movie2Req.setTitle("Dune: Part Two");
+        movie2Req.setDescription("Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.");
+        movie2Req.setEventType(EventType.MOVIE);
+        movie2Req.setDurationMinutes(166);
+        movie2Req.setImageUrl("https://picsum.photos/seed/dune/400/250");
+        Event movie2 = eventService.createEvent(movie2Req);
+
+        EventRequest movie3Req = new EventRequest();
+        movie3Req.setTitle("Oppenheimer");
+        movie3Req.setDescription("The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.");
+        movie3Req.setEventType(EventType.MOVIE);
+        movie3Req.setDurationMinutes(180);
+        movie3Req.setImageUrl("https://picsum.photos/seed/oppenheimer/400/250");
+        Event movie3 = eventService.createEvent(movie3Req);
+
         EventRequest concertReq = new EventRequest();
         concertReq.setTitle("Coldplay: Music of the Spheres");
         concertReq.setDescription("Experience Coldplay live on their Music of the Spheres World Tour with stunning visuals and all-time hits.");
@@ -112,6 +128,24 @@ public class DataSeeder implements CommandLineRunner {
         concertReq.setOrganizerId(clark.getId());
         Event concert = eventService.createEvent(concertReq);
 
+        EventRequest concertReq2 = new EventRequest();
+        concertReq2.setTitle("Ed Sheeran: Mathematics Tour");
+        concertReq2.setDescription("Join Ed Sheeran for his record-breaking global tour performing classics and new hits alike.");
+        concertReq2.setEventType(EventType.CONCERT);
+        concertReq2.setDurationMinutes(150);
+        concertReq2.setImageUrl("https://picsum.photos/seed/edsheeran/400/250");
+        concertReq2.setOrganizerId(clark.getId());
+        Event concert2 = eventService.createEvent(concertReq2);
+
+        EventRequest concertReq3 = new EventRequest();
+        concertReq3.setTitle("Dua Lipa: Future Nostalgia");
+        concertReq3.setDescription("Get ready to dance the night away with Dua Lipa's global sensation tour.");
+        concertReq3.setEventType(EventType.CONCERT);
+        concertReq3.setDurationMinutes(130);
+        concertReq3.setImageUrl("https://picsum.photos/seed/dualipa/400/250");
+        concertReq3.setOrganizerId(clark.getId());
+        Event concert3 = eventService.createEvent(concertReq3);
+
         EventRequest sportReq = new EventRequest();
         sportReq.setTitle("Premier League: Arsenal vs Chelsea");
         sportReq.setDescription("A thrilling London derby at the Emirates Stadium. Two of the biggest clubs in English football face off.");
@@ -120,6 +154,24 @@ public class DataSeeder implements CommandLineRunner {
         sportReq.setImageUrl("https://picsum.photos/seed/football/400/250");
         sportReq.setOrganizerId(clark.getId());
         Event sport = eventService.createEvent(sportReq);
+
+        EventRequest sport2Req = new EventRequest();
+        sport2Req.setTitle("NBA Finals: Lakers vs Celtics");
+        sport2Req.setDescription("The ultimate basketball rivalry resumes in Game 7 of the NBA Finals.");
+        sport2Req.setEventType(EventType.SPORT);
+        sport2Req.setDurationMinutes(150);
+        sport2Req.setImageUrl("https://picsum.photos/seed/nba/400/250");
+        sport2Req.setOrganizerId(clark.getId());
+        Event sport2 = eventService.createEvent(sport2Req);
+
+        EventRequest sport3Req = new EventRequest();
+        sport3Req.setTitle("Wimbledon Men's Final");
+        sport3Req.setDescription("Witness history unfold on the grass courts of Wimbledon for the Grand Slam decider.");
+        sport3Req.setEventType(EventType.SPORT);
+        sport3Req.setDurationMinutes(240);
+        sport3Req.setImageUrl("https://picsum.photos/seed/tennis/400/250");
+        sport3Req.setOrganizerId(clark.getId());
+        Event sport3 = eventService.createEvent(sport3Req);
 
         // --- Venues ---
 
@@ -170,7 +222,7 @@ public class DataSeeder implements CommandLineRunner {
         movieShow1Req.setVenueId(cinema.getId());
         movieShow1Req.setStartTime(tomorrow);
         movieShow1Req.setEndTime(tomorrow.plusMinutes(148));
-        movieShow1Req.setPrice(12.50);
+        movieShow1Req.setPrice(1250.00);
         Show movieShow1 = showService.createShow(movieShow1Req);
 
         ShowRequest movieShow2Req = new ShowRequest();
@@ -178,7 +230,7 @@ public class DataSeeder implements CommandLineRunner {
         movieShow2Req.setVenueId(cinema.getId());
         movieShow2Req.setStartTime(tomorrow.plusHours(4));
         movieShow2Req.setEndTime(tomorrow.plusHours(4).plusMinutes(148));
-        movieShow2Req.setPrice(15.00);
+        movieShow2Req.setPrice(1500.00);
         showService.createShow(movieShow2Req);
 
         ShowRequest concertShowReq = new ShowRequest();
@@ -186,16 +238,64 @@ public class DataSeeder implements CommandLineRunner {
         concertShowReq.setVenueId(concertArena.getId());
         concertShowReq.setStartTime(tomorrow.plusDays(2).withHour(19));
         concertShowReq.setEndTime(tomorrow.plusDays(2).withHour(22));
-        concertShowReq.setPrice(85.00);
+        concertShowReq.setPrice(8500.00);
         Show concertShow = showService.createShow(concertShowReq);
+
+        ShowRequest concertShowReq2 = new ShowRequest();
+        concertShowReq2.setEventId(concert2.getId());
+        concertShowReq2.setVenueId(concertArena.getId());
+        concertShowReq2.setStartTime(tomorrow.plusDays(6).withHour(19));
+        concertShowReq2.setEndTime(tomorrow.plusDays(6).withHour(21).withMinute(30));
+        concertShowReq2.setPrice(7500.00);
+        Show concertShow2 = showService.createShow(concertShowReq2);
+
+        ShowRequest concertShowReq3 = new ShowRequest();
+        concertShowReq3.setEventId(concert3.getId());
+        concertShowReq3.setVenueId(concertArena.getId());
+        concertShowReq3.setStartTime(tomorrow.plusDays(9).withHour(20));
+        concertShowReq3.setEndTime(tomorrow.plusDays(9).withHour(22).withMinute(10));
+        concertShowReq3.setPrice(6500.00);
+        showService.createShow(concertShowReq3);
 
         ShowRequest sportShowReq = new ShowRequest();
         sportShowReq.setEventId(sport.getId());
         sportShowReq.setVenueId(stadium.getId());
         sportShowReq.setStartTime(tomorrow.plusDays(5).withHour(15));
         sportShowReq.setEndTime(tomorrow.plusDays(5).withHour(17));
-        sportShowReq.setPrice(45.00);
+        sportShowReq.setPrice(4500.00);
         Show sportShow = showService.createShow(sportShowReq);
+
+        ShowRequest sport2ShowReq = new ShowRequest();
+        sport2ShowReq.setEventId(sport2.getId());
+        sport2ShowReq.setVenueId(stadium.getId());
+        sport2ShowReq.setStartTime(tomorrow.plusDays(7).withHour(20));
+        sport2ShowReq.setEndTime(tomorrow.plusDays(7).withHour(23));
+        sport2ShowReq.setPrice(5500.00);
+        showService.createShow(sport2ShowReq);
+
+        ShowRequest sport3ShowReq = new ShowRequest();
+        sport3ShowReq.setEventId(sport3.getId());
+        sport3ShowReq.setVenueId(stadium.getId());
+        sport3ShowReq.setStartTime(tomorrow.plusDays(10).withHour(13));
+        sport3ShowReq.setEndTime(tomorrow.plusDays(10).withHour(17));
+        sport3ShowReq.setPrice(8000.00);
+        showService.createShow(sport3ShowReq);
+
+        ShowRequest movie3ShowReq = new ShowRequest();
+        movie3ShowReq.setEventId(movie2.getId());
+        movie3ShowReq.setVenueId(cinema.getId());
+        movie3ShowReq.setStartTime(tomorrow.plusDays(1).withHour(19));
+        movie3ShowReq.setEndTime(tomorrow.plusDays(1).withHour(22));
+        movie3ShowReq.setPrice(950.00);
+        showService.createShow(movie3ShowReq);
+
+        ShowRequest movie4ShowReq = new ShowRequest();
+        movie4ShowReq.setEventId(movie3.getId());
+        movie4ShowReq.setVenueId(cinema.getId());
+        movie4ShowReq.setStartTime(tomorrow.plusDays(2).withHour(18));
+        movie4ShowReq.setEndTime(tomorrow.plusDays(2).withHour(21));
+        movie4ShowReq.setPrice(1100.00);
+        showService.createShow(movie4ShowReq);
 
         // --- Bookings ---
         var cinemaSeats = seatRepository.findByVenueId(cinema.getId());

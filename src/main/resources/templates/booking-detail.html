@@ -46,7 +46,7 @@
             </div>
             <div class="detail-info-item">
                 <span class="label">Total Amount</span>
-                <span class="value" th:text="'$' + ${#numbers.formatDecimal(booking.totalAmount, 1, 2)}">$20.00</span>
+                <span class="value" th:text="'₹' + ${#numbers.formatDecimal(booking.totalAmount, 1, 2)}">₹20.00</span>
             </div>
         </div>
     </div>
@@ -68,7 +68,7 @@
                     <td th:text="${bs.seat.seatRow + bs.seat.seatNumber}">A1</td>
                     <td th:text="${bs.seat.seatRow}">A</td>
                     <td th:text="${bs.seat.seatNumber}">1</td>
-                    <td th:text="'$' + ${#numbers.formatDecimal(bs.price, 1, 2)}">$10.00</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(bs.price, 1, 2)}">₹10.00</td>
                 </tr>
             </tbody>
         </table>
